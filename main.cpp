@@ -26,7 +26,7 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
     // Default values initialization (matching README table defaults where applicable)
     out_w = 0; // Auto-detect
     out_h = 0; // Auto-detect
-    out_b = 0.0;
+    out_b = 1.0;
     out_c = 1.0;
     out_p = ""; // Output to console by default
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     double contrast = 1.0;
     std::string output_path = "";
 
-    std::string image_file = parse_args(argc, argv, &width, &height, &brightness, &contrast, &output_path);
+    std::string image_file = parse_args(argc, argv, width, height, brightness, contrast, output_path);
 
     if (image_file.empty()) {
         std::cerr << "Usage: ascii_converter [options] <image> \n";
@@ -88,28 +88,32 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // --- 2. Initialize and Run Converter ---
+    // --- 2. Initialize and Run Converter (FIXED FLOW) ---
+    ImageConverter converter(image_file); // Use constructor that takes image path!
+
+    // Apply user-specified parameters (assuming setters now exist)
+    converter.setWidth(width);
+    converter.setHeight(height);
+    converter.setBrightness(brightness);
+    converter.setContrast(contrast);
+    converter.setOutputPath(output_path);
+
+    std::cout << "\n==============================================\n";
+    std::cout << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
+    std::cout << "==============================================\n";
+
+
+    // Core execution flow revised to use the proper sequence of method calls:
+    // (loadAndGrayscale is called internally by convert())
+
+    // The conversion call now encapsulates all subsequent steps (Aspect Ratio -> Resize -> Adjust)
+    std::string ascii_art = converter.convert(); 
+
+    if (ascii_art.empty()) {
+        throw std::runtime_error("Conversion resulted in empty ASCII art after all processing stages.");
+    }
+
     try {
-        ImageConverter converter(image_file);
-
-        // Apply user-specified parameters
-        converter.setWidth(width);
-        converter.setHeight(height);
-        converter.setBrightness(brightness);
-        converter.setContrast(contrast);
-        converter.setOutputPath(output_path);
-
-        std::cout << "\n==============================================\n";
-        std::cout << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
-        std::cout << "==============================================\n";
-
-        // Core execution flow based on README's conceptual steps (Load -> Convert)
-        std::string ascii_art = converter.convert();
-
-        if (ascii_art.empty()) {
-            throw std::runtime_error("Conversion resulted in empty ASCII art.");
-        }
-
         // --- 3. Output Result ---
         if (!output_path.empty()) {
             std::ofstream outfile(output_path);

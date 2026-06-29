@@ -18,14 +18,17 @@ struct Pixel {
  */
 class ImageConverter {
 public:
-    // Constructor loads the input file path and initializes internal state.
+ // Constructor loads the input file path and initializes internal state.
     ImageConverter(const std::string& image_path);
+    // --- FIX 1: Default Constructor ---
+    ImageConverter(); // Default constructor now required
+    ~ImageConverter();
 
     /**
      * @brief Executes all conversion steps (grayscale, resize, adjust) and generates the ASCII art string.
      * @return The generated ASCII art as a single string.
      */
-    std::string convert() const;
+    std::string convert();
 
     // --- Configuration Getters/Setters ---
 
@@ -47,6 +50,13 @@ public:
      */
     void setOutputPath(const std::string& output_path) { m_output_path = output_path; }
 
+    /**
+     * @brief Handles loading the image and performing grayscale conversion.
+     * NOTE: Placeholder for stb_image or OpenCV call. Must be implemented with external library binding.
+     */
+    bool loadAndGrayscale();
+
+
 private:
     // State variables
     std::string m_image_path;
@@ -60,22 +70,21 @@ private:
     std::vector<Pixel> m_pixels;
     int m_source_width = 0;
     int m_source_height = 0;
-
     /**
-     * @brief Handles loading the image and performing grayscale conversion.
-     * NOTE: Placeholder for stb_image or OpenCV call. Must be implemented with external library binding.
+     * @brief Applies aspect ratio correction to the target dimensions based on known character ratios (e.g., 1:2).
      */
-    bool loadAndGrayscale();
+    void applyAspectRatioCorrection();
+
 
     /**
      * @brief Resizes the pixel data to match target dimensions (m_width x m_height).
      */
-    void resizePixels() const;
+    bool resizePixels();
 
     /**
      * @brief Adjusts the brightness and contrast of all pixels.
      */
-    void adjustPixelIntensity();
+    bool adjustPixelIntensity();
 
     /**
      * @brief Converts a single pixel's intensity (0-255) into an ASCII character using the defined gradient.
@@ -83,10 +92,10 @@ private:
      * @param intensity The calculated grayscale intensity (0=black/darkest, 255=white/lightest).
      * @return The corresponding ASCII character.
      */
-    char mapIntensityToChar(unsigned char intensity) const;
+    char mapIntensityToChar(unsigned char intensity);
 
     /** Generates the final ASCII art string from the processed pixel grid. */
-    std::string generateAsciiArt() const;
+    std::string generateAsciiArt();
 };
 
 #endif // IMAGE_CONVERTER_H
