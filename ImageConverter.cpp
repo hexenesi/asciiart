@@ -82,48 +82,44 @@ void ImageConverter::applyAspectRatioCorrection() {
 
     // Placeholder constants based on README: Character aspect ratio is typically W/H = 2.0
     const double CHARACTER_ASPECT_RATIO = 2.0; 
+    // We also track the source aspect ratio for better proportionality checks.
+    double source_aspect_ratio = static_cast<double>(m_source_width) / m_source_height;
 
     bool width_set = (m_width != 0);
     bool height_set = (m_height != 0);
 
     if (!width_set && !height_set) {
-        // Case A: Nothing set, calculate default based on source dimensions vs character ratio.
-        double required_target_ratio = static_cast<double>(m_source_width) / m_source_height;
-        double ideal_new_w = m_source_width;
-        double ideal_new_h = m_source_height * (ideal_new_w / required_target_ratio);
-
-        if (std::abs(required_target_ratio - CHARACTER_ASPECT_RATIO) > 0.2) {
-             // Source image ratio is too far off, we must force it towards the character ratio using one dimension.
-             m_width = static_cast<int>(std::round(ideal_new_w)); // Keep source width as base
-             m_height = static_cast<int>(std::round(ideal_new_w / CHARACTER_ASPECT_RATIO));
-             std::cout << "[INFO] Source ratio deviates from character standard. Forcing dimensions to match aspect ratio: " 
-                       << m_width << "x" << m_height << std::endl;
-        } else {
-            // Source is already close enough, use original dimensions (or scale down based on constraints if implemented)
-             m_width = m_source_width;
-             m_height = m_source_height;
-        }
-
+        // Case A: Nothing set. Default to source width, adjusting height for character aspect ratio.
+        std::cout << "[INFO] No dimensions set. Calculating target dimensions based on optimal scaling." << std::endl;
+        m_width = m_source_width;
+        m_height = static_cast<int>(std::round(static_cast<double>(m_source_height) / CHARACTER_ASPECT_RATIO));
+        if (m_height == 0) m_height = 1;
+        std::cout << "[INFO] Using source width and adjusted height: " << m_width << "x" << m_height << std::endl;
 
     } else if (!width_set && height_set) {
-        // Case B: Height set, calculate width.
-        m_width = static_cast<int>(std::round(static_cast<double>(m_height) * CHARACTER_ASPECT_RATIO));
-        std::cout << "[INFO] Setting Width based on provided Height (" << m_height << "): " << m_width << std::endl;
+        // Case B: Height set (Fixed H). Calculate Width based on source aspect ratio and CHARACTER standard.
+        m_width = static_cast<int>(std::round(static_cast<double>(m_height) * source_aspect_ratio * CHARACTER_ASPECT_RATIO));
+        if (m_width == 0) m_width = 1;
+        std::cout << "[INFO] Setting Width based on provided Height (" << m_height 
+                  << ") to preserve aspect ratio: " << m_width << "x" << m_height << std::endl;
 
     } else if (width_set && !height_set) {
-        // Case C: Width set, calculate height.
-        m_height = static_cast<int>(std::round(static_cast<double>(m_width) / CHARACTER_ASPECT_RATIO));
-        std::cout << "[INFO] Setting Height based on provided Width (" << m_width << "): " << m_height << std::endl;
+        // Case C: Width set (Fixed W). Calculate Height based on source aspect ratio and CHARACTER standard.
+        m_height = static_cast<int>(std::round(static_cast<double>(m_width) / (source_aspect_ratio * CHARACTER_ASPECT_RATIO)));
+        if (m_height == 0) m_height = 1;
+        std::cout << "[INFO] Setting Height based on provided Width (" << m_width 
+                  << ") to preserve aspect ratio: " << m_width << "x" << m_height << std::endl;
 
     } else { 
-        // Case D: Both set. Check for major conflict and log warning, but respect user inputs as primary guide.
-         double actual_ratio = static_cast<double>(m_width) / m_height;
-         if (std::abs(actual_ratio - CHARACTER_ASPECT_RATIO) > 0.25) {
+        // Case D: Both set. Respect user inputs, but warn if deviation is large.
+        double target_ratio = static_cast<double>(m_width) / m_height;
+        double expected_ratio = source_aspect_ratio * CHARACTER_ASPECT_RATIO;
+        if (std::abs(target_ratio - expected_ratio) > 0.25) {
              std::cout << "[WARNING] User specified dimensions (" << m_width << "x" << m_height 
-                       << ") significantly deviate from the character ratio of ~2:1. Proceeding with user inputs anyway." << std::endl;
-         } else {
-             std::cout << "[INFO] User specified dimensions are reasonably close to standard aspect ratio." << std::endl;
-         }
+                       << ") significantly deviate from the source aspect ratio. Image may be stretched." << std::endl;
+        } else {
+             std::cout << "[INFO] User specified dimensions preserve aspect ratio well." << std::endl;
+        }
     }
     // After this function, m_width and m_height should contain the final target dimensions for resizing.
 }
