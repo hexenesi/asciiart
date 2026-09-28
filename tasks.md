@@ -23,10 +23,10 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 3. Scale mode
 
-- [ ] Add `setScale(double)`: cols = src_w × s, rows = src_h × s ÷ aspect
-- [ ] Skip the 100-column cap in scale mode
+- [x] Add `setScale(double)`: cols = src_w × s, rows = src_h × s ÷ aspect
+- [x] Skip the 100-column cap in scale mode
 - [ ] `--pages-wide n`: compute scale from page columns (needs `PageLayout`; wire in group 7)
-- [ ] Tests: `--scale 1` gives src_w columns; `--scale 0.5` halves; rounding never gives 0
+- [x] Tests: `--scale 1` gives src_w columns; `--scale 0.5` halves; rounding never gives 0
 
 ## 4. PageLayout
 

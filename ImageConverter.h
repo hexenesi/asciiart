@@ -77,6 +77,18 @@ public:
         return true;
     }
 
+    /**
+     * @brief Sets characters per source pixel (1.0 = one char per pixel horizontally).
+     * Rows are divided by the char aspect. Takes precedence over width/height and
+     * the default 100-column cap. 0 disables scale mode.
+     * @return false if negative or not finite; the current value is kept.
+     */
+    bool setScale(double scale) {
+        if (!(scale >= 0.0 && std::isfinite(scale))) return false;
+        m_scale = scale;
+        return true;
+    }
+
     /** Maps dark pixels to light glyphs, for light-on-dark terminals. */
     void setInvert(bool invert) { m_invert = invert; }
 
@@ -91,6 +103,7 @@ private:
     double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
     bool m_invert{false};
+    double m_scale{0.0};       // Chars per source pixel; 0 = use width/height
     double m_char_aspect{2.0}; // Monospace cells are about twice as tall as wide.
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
     std::vector<std::string> m_charset;

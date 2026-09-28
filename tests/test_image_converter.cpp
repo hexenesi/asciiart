@@ -11,6 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -168,6 +169,28 @@ void testCustomCharAspect() {
     CHECK(!c.setCharAspect(0) && !c.setCharAspect(-1));
 }
 
+void testScaleMode() {
+    auto path = solid("scale", 300, 200, 0);
+    auto size = [&](double scale, double aspect) {
+        auto rows = lines(convert(path, [&](ImageConverter& c) {
+            c.setCharAspect(aspect);
+            c.setScale(scale);
+            c.setWidth(10); // ignored in scale mode
+        }));
+        return std::make_pair(rows.empty() ? 0u : rows[0].size(), rows.size());
+    };
+    // 1:1 ignores the 100-column cap: 300 cols, 200 / 2.0 = 100 rows
+    CHECK(size(1.0, 2.0) == std::make_pair(size_t{300}, size_t{100}));
+    CHECK(size(0.5, 2.0) == std::make_pair(size_t{150}, size_t{50}));
+    CHECK(size(1.0, 1.0 / 0.6) == std::make_pair(size_t{300}, size_t{120}));
+    // Tiny scale never produces an empty image
+    CHECK(size(0.0001, 2.0) == std::make_pair(size_t{1}, size_t{1}));
+
+    ImageConverter c(path);
+    CHECK(c.setScale(0) && c.setScale(2.5));
+    CHECK(!c.setScale(-1));
+}
+
 void testOnePixelOutput() {
     auto art = convert(solid("one", 50, 50, 0), [](ImageConverter& c) {
         c.setWidth(1);
@@ -282,6 +305,7 @@ int main() {
     testWidthOnlyKeepsAspect();
     testHeightOnlyKeepsAspect();
     testCustomCharAspect();
+    testScaleMode();
     testOnePixelOutput();
     testUpscaleKeepsContent();
     testCharsetMapping();

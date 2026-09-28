@@ -55,6 +55,14 @@ void ImageConverter::applyAspectRatioCorrection() {
     const double CHARACTER_ASPECT_RATIO = m_char_aspect;
     double source_aspect_ratio = static_cast<double>(m_source_width) / m_source_height;
 
+    if (m_scale > 0.0) {
+        // Scale mode: size follows the source, ignoring requested width/height.
+        m_width = std::max(1, static_cast<int>(std::round(m_source_width * m_scale)));
+        m_height = std::max(1, static_cast<int>(std::round(m_source_height * m_scale / CHARACTER_ASPECT_RATIO)));
+        std::cerr << "[INFO] Scale " << m_scale << " chars/pixel: " << m_width << "x" << m_height << std::endl;
+        return;
+    }
+
     bool width_set = (m_width != 0);
     bool height_set = (m_height != 0);
 
