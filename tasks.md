@@ -68,6 +68,6 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 8. Docs and verification
 
-- [ ] README: new options, printing workflow, size warning
-- [ ] Manual print test: 2×2 grid on Letter and A4, check alignment and labels
-- [ ] Large-image run (e.g. 4000 px) with `--dry-run` and a real PDF; check file size and time
+- [x] README: new options, printing workflow, size warning
+- [ ] Manual print test: 2×2 grid on Letter and A4, check alignment and labels (needs a printer; print at 100% / actual size)
+- [x] Large-image run with `--dry-run` and a real PDF; check file size and time (962x1280 photo: 1:1 = 49 pages + overview, 0.26 s, 830 KB; A4 4 pages wide = 16 + overview, 0.11 s, 275 KB)

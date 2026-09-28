@@ -16,6 +16,7 @@ Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.)
   * Brillo.
   * Contraste.
 * Salida por consola o archivo de texto.
+* **Póster imprimible en PDF**: la imagen se divide en páginas Carta o A4 numeradas, con los números de las páginas vecinas en los márgenes y una página de resumen con el mapa de ensamblado.
 * Varios conjuntos de caracteres predefinidos (`--charset`).
 * Código portable y escrito en C++ moderno.
 
@@ -61,7 +62,7 @@ Para evitar esta distorsión, el programa aplica un **factor de corrección de a
 
 Por ejemplo, si los caracteres tienen aproximadamente una relación de aspecto de **1:2** (ancho:alto), una imagen de **200×200 píxeles** podría convertirse internamente a **200×100** antes del mapeo ASCII, produciendo una representación visual mucho más fiel al original.
 
-Actualmente el factor es fijo en **2.0** (caracteres el doble de altos que anchos).
+En la consola el factor es fijo en **2.0** (caracteres el doble de altos que anchos). En la salida PDF se calcula a partir de la fuente Courier: interlineado ÷ ancho de carácter = 1 / 0.6 ≈ **1.67**.
 
 Dimensiones de salida:
 
@@ -69,6 +70,7 @@ Dimensiones de salida:
 * Solo `--width`: el alto se calcula automáticamente.
 * Solo `--height`: el ancho se calcula automáticamente.
 * Ambos: se respetan tal cual (se muestra un aviso si deforman la imagen).
+* `--scale s`: `s` caracteres por píxel de la imagen (`1` = un carácter por píxel); sin límite de 100 columnas. No se combina con `--width`/`--height`.
 
 ## Tabla de caracteres
 
@@ -114,12 +116,60 @@ ascii_converter foto.png \
 | -------------- | ------------------------ | ----------------- |
 | `--width`      | Ancho del ASCII generado | Automático        |
 | `--height`     | Alto del ASCII generado  | Automático        |
+| `--scale`      | Caracteres por píxel de la imagen (`1` = 1 px : 1 carácter) | — |
 | `--brightness` | Desplazamiento de brillo en % (-100 a 100; 0 = sin cambio) | 0 |
 | `--contrast`   | Factor de contraste (≥ 0; 1 = sin cambio, 0 = gris plano) | 1.0 |
-| `--output`     | Archivo de salida        | Consola           |
+| `--output`     | Archivo de salida de texto | Consola         |
 | `--charset`    | Conjunto de caracteres   | `standard`        |
 | `--invert`     | Invierte la escala (texto claro sobre fondo oscuro) | desactivado |
 | `--help`, `-h` | Muestra la ayuda         |                   |
+
+### Póster imprimible (PDF)
+
+Para imágenes grandes, `--pdf` genera un PDF listo para imprimir en varias hojas que luego se recortan y se unen:
+
+```bash
+# 1 carácter por píxel, hojas Carta
+ascii_converter foto.jpg --pdf poster.pdf
+
+# Exactamente 4 hojas A4 de ancho, con un conjunto de caracteres detallado
+ascii_converter foto.jpg --pdf poster.pdf --paper a4 --pages-wide 4 --charset detailed
+
+# Solo calcular cuántas páginas saldrían
+ascii_converter foto.jpg --pdf poster.pdf --scale 2 --dry-run
+```
+
+| Opción          | Descripción | Valor por defecto |
+| --------------- | ----------- | ----------------- |
+| `--pdf`         | Archivo PDF de salida. El texto solo se escribe si además se usa `--output` | — |
+| `--paper`       | `letter` (Carta) o `a4` | `letter` |
+| `--orientation` | `portrait`, `landscape` o `auto` (la que use menos páginas) | `portrait` |
+| `--font-size`   | Tamaño de la fuente Courier en puntos | 6 |
+| `--pages-wide`  | Escala la imagen para ocupar exactamente *n* páginas de ancho (no se combina con `--scale`) | — |
+| `--overlap`     | Caracteres repetidos entre páginas vecinas, para facilitar el pegado | 0 |
+| `--max-pages`   | Máximo de páginas; si se supera, no se escribe nada | 50 |
+| `--dry-run`     | Muestra el resumen (tamaño y número de páginas) sin escribir el PDF | — |
+
+Sin `--width`, `--height`, `--scale` ni `--pages-wide`, la salida PDF usa **1 carácter por píxel**. Estas opciones de página requieren `--pdf`, y el conjunto `blocks` no está disponible en PDF (solo ASCII).
+
+Contenido del PDF:
+
+* **Página de resumen** (primera): nombre de la imagen, tamaño en caracteres, número de páginas, papel y fuente, instrucciones de ensamblado y un mapa de la cuadrícula con el número de cada página.
+* **Páginas de la imagen**, numeradas por filas desde 1:
+  * La imagen empieza en la misma posición en todas las hojas, para que encajen al unirlas.
+  * Marcas de corte en las esquinas.
+  * Número de página y posición (`Page 5/9  row 2, col 2`).
+  * Número de cada página vecina junto al borde correspondiente: `^` arriba, `v` abajo, `<` izquierda, `>` derecha.
+
+Con cada ejecución se muestra un resumen en `stderr`, por ejemplo:
+
+```text
+[SUMMARY] 540x431 chars -> 4x4 = 16 pages + overview (A4 portrait, 6 pt Courier)
+```
+
+**Atención al tamaño:** a 1 carácter por píxel, una foto de 4000×3000 píxeles necesita unas 600 hojas Carta a 6 pt. Use `--dry-run` para comprobarlo y `--pages-wide` o `--scale` para ajustar el tamaño.
+
+Para imprimir, use **tamaño real / 100 %** (sin "ajustar a la página"); si la impresora escala las hojas, las páginas vecinas no encajarán.
 
 ### Conjuntos de caracteres (`--charset`)
 
@@ -179,7 +229,7 @@ cmake --build .
 ctest --test-dir build --output-on-failure
 ```
 
-Incluye pruebas unitarias de `ImageConverter` (tamaños, conjuntos de caracteres, brillo/contraste, inversión, transparencia) y pruebas de la línea de comandos.
+Incluye pruebas unitarias de `ImageConverter` (tamaños, escala, conjuntos de caracteres, brillo/contraste, inversión, transparencia), de la paginación (`PageLayout`), del escritor de PDF (`PdfWriter`) y del contenido de las páginas (`PosterRenderer`), además de pruebas de la línea de comandos. Las pruebas de línea de comandos usan la imagen `tests/data/circle.png`.
 
 ## Ejemplo de salida
 
@@ -223,7 +273,8 @@ ascii_converter foto.png > arte.txt
 * Conversión de GIF y video.
 * Procesamiento en paralelo para imágenes grandes.
 * Paletas de caracteres definidas por el usuario (además de los presets).
-* Factor de corrección de aspecto configurable.
+* Factor de corrección de aspecto configurable en la consola (en PDF ya se calcula a partir de la fuente).
+* Compresión de los PDF generados.
 
 ## Licencia
 
