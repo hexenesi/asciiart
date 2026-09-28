@@ -30,13 +30,13 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 4. PageLayout
 
-- [ ] Paper sizes: Letter 612×792 pt, A4 595×842 pt
-- [ ] Orientation: portrait, landscape, auto (fewer pages)
-- [ ] Printable area = paper − margins − label band
-- [ ] Chars per page from font size (0.6 em advance) and leading
-- [ ] Grid size with ceil division; overlap support
-- [ ] Page records: number (row-major from 1), row/col, neighbours, art slice (col/row ranges)
-- [ ] Tests: exact fit, partial last row/col, 1×1 grid, neighbours at corners/edges/middle, overlap, auto orientation
+- [x] Paper sizes: Letter 612×792 pt, A4 595×842 pt
+- [x] Orientation: portrait, landscape, auto (fewer pages)
+- [x] Printable area = paper − margins − label band
+- [x] Chars per page from font size (0.6 em advance) and leading
+- [x] Grid size with ceil division; overlap support
+- [x] Page records: number (row-major from 1), row/col, neighbours, art slice (col/row ranges)
+- [x] Tests: exact fit, partial last row/col, 1×1 grid, neighbours at corners/edges/middle, overlap, auto orientation
 
 ## 5. PdfWriter
 

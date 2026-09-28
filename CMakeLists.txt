@@ -33,6 +33,16 @@ if(NOT MSVC)
 endif()
 add_test(NAME unit COMMAND test_image_converter WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
+add_executable(test_page_layout
+    tests/test_page_layout.cpp
+    PageLayout.cpp
+)
+target_include_directories(test_page_layout PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT MSVC)
+    target_compile_options(test_page_layout PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME page_layout COMMAND test_page_layout)
+
 # CLI behavior
 add_test(NAME cli_help COMMAND ascii_converter --help)
 add_test(NAME cli_no_args COMMAND ascii_converter)
