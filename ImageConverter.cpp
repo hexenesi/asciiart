@@ -1,11 +1,11 @@
 #include "ImageConverter.h"
-// Placeholder for external library headers (e.g., #define STB_IMAGE_IMPLEMENTATION and include the header)
 
-// FIX: Keep macro definition here only once for this compilation unit.
-#define STB_IMAGE_IMPLEMENTATION 
 #include <iostream>
 #include <stdexcept>
-#include <include/stb_image.h> // Assuming stb_image.h is available
+
+// Compile the stb_image implementation in this translation unit only.
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 // --- Constructor and Setup ---
 
 ImageConverter::ImageConverter(const std::string& image_path) 
