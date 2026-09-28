@@ -9,7 +9,7 @@
 // --- Constructor and Setup ---
 
 ImageConverter::ImageConverter(const std::string& image_path) 
-    : m_image_path(image_path), m_width(0), m_height(0), m_brightness(0.0), m_contrast(1.0) {
+    : m_image_path(image_path), m_width(0), m_height(0), m_brightness(1.0), m_contrast(1.0) {
     // Initialize state variables here based on the path provided during construction.
 }
 

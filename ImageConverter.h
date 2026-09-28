@@ -38,7 +38,7 @@ public:
     /** Sets the desired output height for the ASCII grid. */
     void setHeight(int h) { m_height = h; }
 
-    /** Sets the brightness adjustment factor (0.0 to 2.0). */
+    /** Sets the brightness factor (0.0 to 2.0, 1.0 = neutral). */
     void setBrightness(double b) { m_brightness = std::max(0.0, std::min(2.0, b)); }
 
     /** Sets the contrast adjustment factor (> 1.0 for contrast increase). */
@@ -63,7 +63,7 @@ private:
     std::string m_output_path;
     int m_width{0}; // Target width, 0 means auto/default
     int m_height{0}; // Target height, 0 means auto/default
-    double m_brightness{0.0};
+    double m_brightness{1.0}; // 1.0 = neutral
     double m_contrast{1.0};
 
     // Internal data holders (populated during constructor)

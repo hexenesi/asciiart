@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     // --- 1. Parse Arguments ---
     int width = 0;
     int height = 0;
-    double brightness = 0.0;
+    double brightness = 1.0;
     double contrast = 1.0;
     std::string output_path = "";
 
