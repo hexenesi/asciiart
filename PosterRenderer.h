@@ -1,0 +1,29 @@
+#ifndef POSTER_RENDERER_H
+#define POSTER_RENDERER_H
+
+#include <string>
+
+#include "ImageConverter.h"
+#include "PageLayout.h"
+#include "PdfWriter.h"
+
+/** Descriptive text for the overview page. Must be ASCII (non-ASCII is replaced with '?'). */
+struct PosterInfo {
+    std::string title;   // e.g. the image file name
+    std::string details; // e.g. "Scale 1 char/px, Letter portrait, 6 pt Courier"
+};
+
+/**
+ * @brief Renders an overview page followed by one page per layout tile.
+ *
+ * Art pages: the art slice at the same origin on every sheet, corner cut marks at the
+ * slice bounds, the page number and grid position, and neighbour numbers in the margins.
+ * The overview page shows a map of the tile grid with page numbers.
+ *
+ * @throws std::invalid_argument if the grid does not match the layout or contains
+ *         glyphs that are not single printable ASCII characters.
+ */
+void renderPoster(const AsciiGrid& grid, const PageLayout& layout, const PageSettings& settings,
+                  const PosterInfo& info, PdfWriter& pdf);
+
+#endif // POSTER_RENDERER_H

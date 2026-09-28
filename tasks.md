@@ -49,12 +49,12 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 6. Page content
 
-- [ ] Fixed art origin on every page so sheets align
-- [ ] Page number + grid position in a corner
-- [ ] Neighbour numbers centred in top/bottom/left/right margins (omitted at edges)
-- [ ] Cut marks at art-area corners
-- [ ] Overview page: grid map with numbers, image name, scale, paper, page count, assembly note
-- [ ] Tests: labels present for middle page; absent neighbours at edges; overview is page 1 of the PDF
+- [x] Fixed art origin on every page so sheets align
+- [x] Page number + grid position in a corner
+- [x] Neighbour numbers centred in top/bottom/left/right margins (omitted at edges)
+- [x] Cut marks at art-area corners
+- [x] Overview page: grid map with numbers, image name, scale, paper, page count, assembly note
+- [x] Tests: labels present for middle page; absent neighbours at edges; overview is page 1 of the PDF
 
 ## 7. CLI
 
