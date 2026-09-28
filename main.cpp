@@ -1,123 +1,119 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <sstream>
 #include <fstream>
 #include <cstdlib> // For EXIT_SUCCESS/FAILURE
 #include <stdexcept>
 
 #include "ImageConverter.h"
 
-/** Parses a whole argument as a number; exits with an error on invalid input. */
-double parse_number(const std::string& option, const char* value) {
-    try {
-        size_t consumed = 0;
-        double result = std::stod(value, &consumed);
-        if (consumed == std::string(value).size()) return result;
-    } catch (...) {
-    }
-    std::cerr << "Error: " << option << " requires a numeric value, got '" << value << "'.\n";
+struct Options {
+    std::string image_path;
+    int width = 0;  // 0 = automatic
+    int height = 0; // 0 = automatic
+    double brightness = 0.0;
+    double contrast = 1.0;
+    std::string charset = ImageConverter::charsetNames().front();
+    std::string output_path; // empty = stdout
+};
+
+void print_usage(std::ostream& out) {
+    out << "Usage: ascii_converter [options] <image>\n"
+           "\n"
+           "Options:\n"
+           "  --width <n>         Output width in characters (default: automatic, up to 100)\n"
+           "  --height <n>        Output height in rows (default: automatic)\n"
+           "  --brightness <pct>  Brightness offset, -100 to 100 (default: 0)\n"
+           "  --contrast <f>      Contrast factor, >= 0 (default: 1.0)\n"
+           "  --charset <name>    Character set:";
+    for (const auto& name : ImageConverter::charsetNames()) out << ' ' << name;
+    out << " (default: " << ImageConverter::charsetNames().front() << ")\n"
+           "  --output <file>     Write to file instead of stdout\n"
+           "  -h, --help          Show this help\n"
+           "\n"
+           "Example: ascii_converter foto.jpg --width 120\n";
+}
+
+[[noreturn]] void fail(const std::string& message) {
+    std::cerr << "Error: " << message << "\n"
+              << "Run 'ascii_converter --help' for usage.\n";
     std::exit(EXIT_FAILURE);
 }
 
-/**
- * @brief Parses command-line arguments (see README).
- *
- * Expects: ascii_converter [options] <image_path>
- * Options: --width, --height, --brightness, --contrast, --charset, --output
- *
- * @return The path to the image file, or an empty string if none provided.
- */
-std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& out_b, double& out_c, std::string& out_p, std::string& out_cs) {
-    std::string image_path = "";
+/** Parses a whole argument as a number; exits with an error on invalid input. */
+double parse_number(const std::string& option, const std::string& value) {
+    try {
+        size_t consumed = 0;
+        double result = std::stod(value, &consumed);
+        if (consumed == value.size()) return result;
+    } catch (...) {
+    }
+    fail(option + " requires a numeric value, got '" + value + "'.");
+}
 
-    // Defaults match the README options table.
-    out_w = 0; // Auto-detect
-    out_h = 0; // Auto-detect
-    out_b = 0.0;
-    out_c = 1.0;
-    out_p = ""; // Output to console by default
-    out_cs = ImageConverter::charsetNames().front();
+/** Parses a whole argument as a positive integer; exits with an error on invalid input. */
+int parse_positive_int(const std::string& option, const std::string& value) {
+    try {
+        size_t consumed = 0;
+        int result = std::stoi(value, &consumed);
+        if (consumed == value.size() && result > 0) return result;
+    } catch (...) {
+    }
+    fail(option + " requires a positive integer, got '" + value + "'.");
+}
+
+/** Parses command-line arguments (see README); exits on invalid input or --help. */
+Options parse_args(int argc, char* argv[]) {
+    Options opts;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
-        if (arg == "--width" && i + 1 < argc) {
-            try {
-                out_w = std::stoi(argv[++i]);
-            } catch (...) {
-                std::cerr << "Error: --width requires an integer value.\n";
-            }
-        } else if (arg == "--height" && i + 1 < argc) {
-            try {
-                out_h = std::stoi(argv[++i]);
-            } catch (...) {
-                std::cerr << "Error: --height requires an integer value.\n";
-            }
-        } else if (arg == "--brightness" && i + 1 < argc) {
-            out_b = parse_number(arg, argv[++i]);
-        } else if (arg == "--contrast" && i + 1 < argc) {
-            out_c = parse_number(arg, argv[++i]);
-        } else if (arg == "--charset" && i + 1 < argc) {
-            out_cs = argv[++i];
-        } else if (arg == "--output" && i + 1 < argc) {
-            out_p = argv[++i];
+        if (arg == "-h" || arg == "--help") {
+            print_usage(std::cout);
+            std::exit(EXIT_SUCCESS);
+        }
+
+        if (arg.size() > 1 && arg[0] == '-') {
+            bool known = arg == "--width" || arg == "--height" || arg == "--brightness" ||
+                         arg == "--contrast" || arg == "--charset" || arg == "--output";
+            if (!known) fail("unknown option '" + arg + "'.");
+            if (i + 1 >= argc) fail(arg + " requires a value.");
+            std::string value = argv[++i];
+
+            if (arg == "--width") opts.width = parse_positive_int(arg, value);
+            else if (arg == "--height") opts.height = parse_positive_int(arg, value);
+            else if (arg == "--brightness") opts.brightness = parse_number(arg, value);
+            else if (arg == "--contrast") opts.contrast = parse_number(arg, value);
+            else if (arg == "--charset") opts.charset = value;
+            else opts.output_path = value;
+        } else if (opts.image_path.empty()) {
+            opts.image_path = arg;
         } else {
-            // Assume the first unparsed positional argument is the image path.
-            if (image_path.empty()) {
-                image_path = arg;
-            }
+            fail("more than one image given ('" + opts.image_path + "' and '" + arg + "').");
         }
     }
 
-    return image_path;
+    return opts;
 }
 
 
 int main(int argc, char* argv[]) {
-    // --- 1. Parse Arguments ---
-    int width = 0;
-    int height = 0;
-    double brightness = 0.0;
-    double contrast = 1.0;
-    std::string output_path = "";
-    std::string charset;
+    Options opts = parse_args(argc, argv);
 
-    std::string image_file = parse_args(argc, argv, width, height, brightness, contrast, output_path, charset);
-
-    if (image_file.empty()) {
-        std::cerr << "Usage: ascii_converter [options] <image> \n";
-        std::cerr << "Example: ascii_converter foto.jpg --width 120 --height 60\n";
-        std::cerr << "Charsets (--charset):";
-        for (const auto& name : ImageConverter::charsetNames()) std::cerr << ' ' << name;
-        std::cerr << '\n';
-        return EXIT_FAILURE;
-    }
-
-    if (width < 0 || height < 0) {
-        std::cerr << "Error: --width and --height must be positive integers.\n";
+    if (opts.image_path.empty()) {
+        print_usage(std::cerr);
         return EXIT_FAILURE;
     }
 
     // --- 2. Configure and run converter ---
-    ImageConverter converter(image_file);
+    ImageConverter converter(opts.image_path);
 
-    converter.setWidth(width);
-    converter.setHeight(height);
-    if (!converter.setBrightness(brightness)) {
-        std::cerr << "Error: --brightness must be between -100 and 100.\n";
-        return EXIT_FAILURE;
-    }
-    if (!converter.setContrast(contrast)) {
-        std::cerr << "Error: --contrast must be 0 or greater.\n";
-        return EXIT_FAILURE;
-    }
-    if (!converter.setCharset(charset)) {
-        std::cerr << "Error: unknown charset '" << charset << "'. Available:";
-        for (const auto& name : ImageConverter::charsetNames()) std::cerr << ' ' << name;
-        std::cerr << '\n';
-        return EXIT_FAILURE;
-    }
+    converter.setWidth(opts.width);
+    converter.setHeight(opts.height);
+    if (!converter.setBrightness(opts.brightness)) fail("--brightness must be between -100 and 100.");
+    if (!converter.setContrast(opts.contrast)) fail("--contrast must be 0 or greater.");
+    if (!converter.setCharset(opts.charset)) fail("unknown charset '" + opts.charset + "'.");
 
     std::cerr << "\n==============================================\n";
     std::cerr << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
@@ -132,14 +128,14 @@ int main(int argc, char* argv[]) {
         }
 
         // --- 3. Output Result ---
-        if (!output_path.empty()) {
-            std::ofstream outfile(output_path);
+        if (!opts.output_path.empty()) {
+            std::ofstream outfile(opts.output_path);
             if (outfile.is_open()) {
                 outfile << ascii_art;
                 outfile.close();
-                std::cerr << "\n[SUCCESS] Conversion complete! Saved art to: " << output_path << std::endl;
+                std::cerr << "\n[SUCCESS] Conversion complete! Saved art to: " << opts.output_path << std::endl;
             } else {
-                std::cerr << "[ERROR] Could not open file for writing: " << output_path << ". Printing to console instead.\n";
+                std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path << ". Printing to console instead.\n";
                 std::cout << ascii_art; // Fallback to cout
             }
         } else {
