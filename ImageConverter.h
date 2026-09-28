@@ -51,6 +51,15 @@ public:
     void setOutputPath(const std::string& output_path) { m_output_path = output_path; }
 
     /**
+     * @brief Selects a character set preset by name (see charsetNames()).
+     * @return false if the name is unknown; the current charset is kept.
+     */
+    bool setCharset(const std::string& name);
+
+    /** Names of the available charset presets, default first. */
+    static std::vector<std::string> charsetNames();
+
+    /**
      * @brief Handles loading the image and performing grayscale conversion.
      * NOTE: Placeholder for stb_image or OpenCV call. Must be implemented with external library binding.
      */
@@ -65,6 +74,8 @@ private:
     int m_height{0}; // Target height, 0 means auto/default
     double m_brightness{1.0}; // 1.0 = neutral
     double m_contrast{1.0};
+    // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
+    std::vector<std::string> m_charset;
 
     // Internal data holders (populated during constructor)
     std::vector<Pixel> m_pixels;
@@ -90,9 +101,9 @@ private:
      * @brief Converts a single pixel's intensity (0-255) into an ASCII character using the defined gradient.
      * Intensity is normalized from darkest (low value, dense char) to lightest (high value, space/light char).
      * @param intensity The calculated grayscale intensity (0=black/darkest, 255=white/lightest).
-     * @return The corresponding ASCII character.
+     * @return The corresponding glyph from the active charset.
      */
-    char mapIntensityToChar(unsigned char intensity);
+    const std::string& mapIntensityToChar(unsigned char intensity) const;
 
     /** Generates the final ASCII art string from the processed pixel grid. */
     std::string generateAsciiArt();

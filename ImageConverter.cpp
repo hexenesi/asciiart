@@ -219,25 +219,54 @@ bool ImageConverter::adjustPixelIntensity() {
     return true;
 }
 
-char ImageConverter::mapIntensityToChar(unsigned char intensity)  {
-    // An extended ASCII character set gradient from dark to light
-    const std::string char_gradient = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-    const int GRADIENT_SIZE = char_gradient.length();
+namespace {
 
-    // Intensity is normalized from [0, 255]. We want low intensity -> index 0 ('@').
-    // Normalized position (0.0 to 1.0) based on the pixel value: intensity / 255.0
-    double norm_intensity = static_cast<double>(intensity) / 255.0;
+struct CharsetPreset {
+    const char* name;
+    std::vector<std::string> glyphs; // darkest to lightest
+};
 
-    // We need an inverse mapping: low intensity means high ASCII index, and vice versa for character density (which is counter-intuitive).
-    // Since the gradient goes from dense ('@', 0% of range) to light ('.', 100% of range), we map:
-    // Low Intensity (dark pixel -> near black) should correspond to Index 0.
-    // High Intensity (light pixel -> near white) should correspond to Index N-1.
+std::vector<std::string> splitGlyphs(const std::string& s) {
+    std::vector<std::string> glyphs;
+    for (char ch : s) glyphs.emplace_back(1, ch);
+    return glyphs;
+}
 
-    // We scale the normalized intensity [0, 1] across the index space [0, GRADIENT_SIZE - 1].
-    int char_index = static_cast<int>(std::round(norm_intensity * (GRADIENT_SIZE - 1)));
+// Well-known ASCII art ramps. "standard"/"detailed" are Paul Bourke's 10- and 70-level ramps.
+const std::vector<CharsetPreset>& charsetPresets() {
+    static const std::vector<CharsetPreset> presets = {
+        {"standard", splitGlyphs("@%#*+=-:. ")},
+        {"detailed", splitGlyphs("$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ")},
+        {"simple",   splitGlyphs("#+-. ")},
+        {"binary",   splitGlyphs("# ")},
+        {"blocks",   {"█", "▓", "▒", "░", " "}},
+    };
+    return presets;
+}
 
-    if (char_index < 0) return ' '; // Fallback for errors
-    return char_gradient[char_index];
+} // namespace
+
+std::vector<std::string> ImageConverter::charsetNames() {
+    std::vector<std::string> names;
+    for (const auto& preset : charsetPresets()) names.emplace_back(preset.name);
+    return names;
+}
+
+bool ImageConverter::setCharset(const std::string& name) {
+    for (const auto& preset : charsetPresets()) {
+        if (name == preset.name) {
+            m_charset = preset.glyphs;
+            return true;
+        }
+    }
+    return false;
+}
+
+const std::string& ImageConverter::mapIntensityToChar(unsigned char intensity) const {
+    // Dark pixels map to index 0 (densest glyph), light pixels to the last glyph.
+    const auto& glyphs = m_charset.empty() ? charsetPresets().front().glyphs : m_charset;
+    size_t index = static_cast<size_t>(std::round(intensity / 255.0 * (glyphs.size() - 1)));
+    return glyphs[index];
 }
 
 std::string ImageConverter::generateAsciiArt()  {
@@ -249,7 +278,7 @@ std::string ImageConverter::generateAsciiArt()  {
     // ===============================================================
 
     std::string ascii_art;
-    ascii_art.reserve(m_source_height * m_width); // Reserve space for performance
+    ascii_art.reserve(static_cast<size_t>(m_height) * (m_width + 1)); // Reserve space for performance
 
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {

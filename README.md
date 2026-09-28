@@ -108,6 +108,17 @@ ascii_converter foto.png \
 | `--brightness` | Ajuste de brillo         | 0                 |
 | `--contrast`   | Ajuste de contraste      | 1.0               |
 | `--output`     | Archivo de salida        | Consola           |
+| `--charset`    | Conjunto de caracteres   | `standard`        |
+
+### Conjuntos de caracteres (`--charset`)
+
+| Nombre     | Caracteres (oscuro → claro)  |
+| ---------- | ---------------------------- |
+| `standard` | `@%#*+=-:. ` (10 niveles)    |
+| `detailed` | Rampa de 70 niveles de Paul Bourke |
+| `simple`   | `#+-. `                      |
+| `binary`   | `# `                         |
+| `blocks`   | `█▓▒░ ` (Unicode, requiere terminal UTF-8) |
 
 ## Algoritmo
 

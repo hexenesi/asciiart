@@ -21,7 +21,7 @@
  * @param argv Argument vector.
  * @return std::string The path to the image file, or an empty string if none provided.
  */
-std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& out_b, double& out_c, std::string& out_p) {
+std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& out_b, double& out_c, std::string& out_p, std::string& out_cs) {
     std::string image_path = "";
 
     // Default values initialization (matching README table defaults where applicable)
@@ -30,6 +30,7 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
     out_b = 1.0;
     out_c = 1.0;
     out_p = ""; // Output to console by default
+    out_cs = ImageConverter::charsetNames().front();
 
     // Basic argument parsing loop (Needs robust library implementation in a real app)
     for (int i = 1; i < argc; ++i) {
@@ -59,6 +60,8 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
             } catch (...) {
                 std::cerr << "Error: --contrast requires a floating point value.\n";
             }
+        } else if (arg == "--charset" && i + 1 < argc) {
+            out_cs = argv[++i];
         } else if (arg == "--output" && i + 1 < argc) {
             out_p = argv[++i];
         } else {
@@ -80,12 +83,16 @@ int main(int argc, char* argv[]) {
     double brightness = 1.0;
     double contrast = 1.0;
     std::string output_path = "";
+    std::string charset;
 
-    std::string image_file = parse_args(argc, argv, width, height, brightness, contrast, output_path);
+    std::string image_file = parse_args(argc, argv, width, height, brightness, contrast, output_path, charset);
 
     if (image_file.empty()) {
         std::cerr << "Usage: ascii_converter [options] <image> \n";
         std::cerr << "Example: ascii_converter foto.jpg --width 120 --height 60\n";
+        std::cerr << "Charsets (--charset):";
+        for (const auto& name : ImageConverter::charsetNames()) std::cerr << ' ' << name;
+        std::cerr << '\n';
         return EXIT_FAILURE;
     }
 
@@ -103,6 +110,12 @@ int main(int argc, char* argv[]) {
     converter.setBrightness(brightness);
     converter.setContrast(contrast);
     converter.setOutputPath(output_path);
+    if (!converter.setCharset(charset)) {
+        std::cerr << "Error: unknown charset '" << charset << "'. Available:";
+        for (const auto& name : ImageConverter::charsetNames()) std::cerr << ' ' << name;
+        std::cerr << '\n';
+        return EXIT_FAILURE;
+    }
 
     std::cerr << "\n==============================================\n";
     std::cerr << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
