@@ -119,7 +119,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: --contrast must be 0 or greater.\n";
         return EXIT_FAILURE;
     }
-    converter.setOutputPath(output_path);
     if (!converter.setCharset(charset)) {
         std::cerr << "Error: unknown charset '" << charset << "'. Available:";
         for (const auto& name : ImageConverter::charsetNames()) std::cerr << ' ' << name;

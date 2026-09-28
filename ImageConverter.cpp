@@ -8,19 +8,8 @@
 #include "stb_image.h"
 // --- Constructor and Setup ---
 
-ImageConverter::ImageConverter(const std::string& image_path) 
-    : m_image_path(image_path), m_width(0), m_height(0), m_brightness(0.0), m_contrast(1.0) {
-    // Initialize state variables here based on the path provided during construction.
-}
-
-ImageConverter::ImageConverter() 
-    : m_image_path("") // Empty string means no image loaded yet
-{
-    std::cerr << "[SETUP] ImageConverter object instantiated without an initial file path." << std::endl;
-}
-
-// Destructor required for completeness, though minimal logic shown.
-ImageConverter::~ImageConverter() = default;
+ImageConverter::ImageConverter(const std::string& image_path)
+    : m_image_path(image_path) {}
 
 // --- Core Steps Implementation ---
 
@@ -281,7 +270,10 @@ std::string ImageConverter::convert() {
     }
 
     // *** NEW STEP ORDER ***
-    applyAspectRatioCorrection(); 
+    // Start from the requested size so repeated calls give the same result.
+    m_width = m_requested_width;
+    m_height = m_requested_height;
+    applyAspectRatioCorrection();
     resizePixels();
     adjustPixelIntensity();
 

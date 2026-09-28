@@ -18,11 +18,8 @@ struct Pixel {
  */
 class ImageConverter {
 public:
- // Constructor loads the input file path and initializes internal state.
-    ImageConverter(const std::string& image_path);
-    // --- FIX 1: Default Constructor ---
-    ImageConverter(); // Default constructor now required
-    ~ImageConverter();
+    /** Stores the image path; the image is loaded by convert(). */
+    explicit ImageConverter(const std::string& image_path);
 
     /**
      * @brief Executes all conversion steps (grayscale, resize, adjust) and generates the ASCII art string.
@@ -32,11 +29,11 @@ public:
 
     // --- Configuration Getters/Setters ---
 
-    /** Sets the desired output width for the ASCII grid. */
-    void setWidth(int w) { m_width = w; }
+    /** Sets the desired output width in characters (0 = automatic). */
+    void setWidth(int w) { m_requested_width = w; }
 
-    /** Sets the desired output height for the ASCII grid. */
-    void setHeight(int h) { m_height = h; }
+    /** Sets the desired output height in rows (0 = automatic). */
+    void setHeight(int h) { m_requested_height = h; }
 
     /**
      * @brief Sets the brightness offset in percent of the full range (-100 to 100, 0 = unchanged).
@@ -59,12 +56,6 @@ public:
     }
 
     /**
-     * @brief Sets the output file path. If empty, output will be printed to console.
-     * @param output_path The desired file path.
-     */
-    void setOutputPath(const std::string& output_path) { m_output_path = output_path; }
-
-    /**
      * @brief Selects a character set preset by name (see charsetNames()).
      * @return false if the name is unknown; the current charset is kept.
      */
@@ -73,28 +64,26 @@ public:
     /** Names of the available charset presets, default first. */
     static std::vector<std::string> charsetNames();
 
-    /**
-     * @brief Handles loading the image and performing grayscale conversion.
-     * NOTE: Placeholder for stb_image or OpenCV call. Must be implemented with external library binding.
-     */
-    bool loadAndGrayscale();
-
-
 private:
-    // State variables
+    // Configuration
     std::string m_image_path;
-    std::string m_output_path;
-    int m_width{0}; // Target width, 0 means auto/default
-    int m_height{0}; // Target height, 0 means auto/default
+    int m_requested_width{0};  // 0 = automatic
+    int m_requested_height{0}; // 0 = automatic
     double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
     std::vector<std::string> m_charset;
 
-    // Internal data holders (populated during constructor)
+    // Per-conversion state (reset by convert())
     std::vector<Pixel> m_pixels;
     int m_source_width = 0;
     int m_source_height = 0;
+    int m_width = 0;  // Final output width
+    int m_height = 0; // Final output height
+
+    /** Loads the image with stb_image and converts it to grayscale. */
+    bool loadAndGrayscale();
+
     /**
      * @brief Applies aspect ratio correction to the target dimensions based on known character ratios (e.g., 1:2).
      */
