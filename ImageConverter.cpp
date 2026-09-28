@@ -45,13 +45,13 @@ bool ImageConverter::loadAndGrayscale() {
     }
 
     // Allocate memory for the pixel representation (we store it as RGBA, but only use the intensity).
-    size_t total_pixels = m_source_width * m_source_height;
+    size_t total_pixels = static_cast<size_t>(m_source_width) * static_cast<size_t>(m_source_height);
     m_pixels.resize(total_pixels);
 
     // Convert loaded raw RGB/RGBA data into our internal Pixel structure and calculate perceived grayscale intensity.
-    for (int i = 0; i < total_pixels; ++i) {
+    for (size_t i = 0; i < total_pixels; ++i) {
         // Calculate the offset for the current pixel in the raw buffer
-        int offset = i * 4;
+        size_t offset = i * 4;
 
         // Use standard luminosity calculation for perceived grayscale intensity: Y = 0.299R + 0.587G + 0.114B
         double intensity_double = (raw_data[offset] * 0.299) +
@@ -135,7 +135,7 @@ bool ImageConverter::resizePixels() {
     size_t final_size = static_cast<size_t>(m_width) * m_height;
 
     // Check if target dimensions match source dimensions, in which case no operation is needed.
-    if (m_source_width == static_cast<size_t>(m_width) && m_source_height == static_cast<size_t>(m_height)) {
+    if (m_source_width == m_width && m_source_height == m_height) {
         std::cerr << "[INFO] Source and target dimensions match. Skipping resize.\n";
         return true;
     }
@@ -164,10 +164,10 @@ bool ImageConverter::resizePixels() {
                 continue; 
             }
             // Calculate the linear index for the source pixel (in the original m_pixels buffer)
-            size_t source_index = src_y * m_source_width + src_x;
+            size_t source_index = static_cast<size_t>(src_y) * m_source_width + src_x;
             
             // The destination pixel index (row-major order in the new, smaller buffer)
-            size_t target_index = y_target * m_width + x_target;
+            size_t target_index = static_cast<size_t>(y_target) * m_width + x_target;
 
             // Copy the intensity data from the source pixel to the target pixel
             resized[target_index] = m_pixels[source_index];
@@ -260,7 +260,7 @@ std::string ImageConverter::generateAsciiArt()  {
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {
             // Calculate linear index (assuming row-major order)
-            size_t index = y * m_width + x;
+            size_t index = static_cast<size_t>(y) * m_width + x;
 
             // Retrieve the grayscale intensity from the pixel (since R, G, and B are same, we just use R)
             unsigned char intensity = m_pixels[index].r;
