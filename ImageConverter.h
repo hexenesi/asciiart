@@ -92,6 +92,9 @@ public:
     /** Maps dark pixels to light glyphs, for light-on-dark terminals. */
     void setInvert(bool invert) { m_invert = invert; }
 
+    /** Reads an image's pixel size from its header without decoding it; false if unreadable. */
+    static bool imageSize(const std::string& path, int& width, int& height);
+
     /** Names of the available charset presets, default first. */
     static std::vector<std::string> charsetNames();
 

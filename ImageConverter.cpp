@@ -182,6 +182,11 @@ const std::vector<CharsetPreset>& charsetPresets() {
 
 } // namespace
 
+bool ImageConverter::imageSize(const std::string& path, int& width, int& height) {
+    int channels = 0;
+    return stbi_info(path.c_str(), &width, &height, &channels) != 0;
+}
+
 std::vector<std::string> ImageConverter::charsetNames() {
     std::vector<std::string> names;
     for (const auto& preset : charsetPresets()) names.emplace_back(preset.name);

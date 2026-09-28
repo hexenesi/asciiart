@@ -25,7 +25,7 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 - [x] Add `setScale(double)`: cols = src_w × s, rows = src_h × s ÷ aspect
 - [x] Skip the 100-column cap in scale mode
-- [ ] `--pages-wide n`: compute scale from page columns (needs `PageLayout`; wire in group 7)
+- [x] `--pages-wide n`: compute scale from page columns (needs `PageLayout`; wire in group 7)
 - [x] Tests: `--scale 1` gives src_w columns; `--scale 0.5` halves; rounding never gives 0
 
 ## 4. PageLayout
@@ -58,13 +58,13 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 7. CLI
 
-- [ ] `--pdf <file>` option; `--output` keeps writing text and can be combined with it
-- [ ] Options: `--paper`, `--orientation`, `--font-size`, `--scale`, `--pages-wide`, `--overlap`, `--max-pages` (default 50), `--dry-run`
-- [ ] Use font-derived aspect for PDF output
-- [ ] Summary line on stderr (chars, grid, pages, paper, font size)
-- [ ] Errors: `--scale` + `--pages-wide`; either + `--width`/`--height`; `blocks` + PDF; over `--max-pages`; page options without `--pdf`
-- [ ] Update `--help`
-- [ ] CLI tests in CTest for each error and for `--dry-run`
+- [x] `--pdf <file>` option; `--output` keeps writing text and can be combined with it
+- [x] Options: `--paper`, `--orientation`, `--font-size`, `--scale`, `--pages-wide`, `--overlap`, `--max-pages` (default 50), `--dry-run`
+- [x] Use font-derived aspect for PDF output
+- [x] Summary line on stderr (chars, grid, pages, paper, font size)
+- [x] Errors: `--scale` + `--pages-wide`; either + `--width`/`--height`; `blocks` + PDF; over `--max-pages`; page options without `--pdf`
+- [x] Update `--help`
+- [x] CLI tests in CTest for each error and for `--dry-run`
 
 ## 8. Docs and verification
 
