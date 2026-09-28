@@ -43,6 +43,16 @@ if(NOT MSVC)
 endif()
 add_test(NAME page_layout COMMAND test_page_layout)
 
+add_executable(test_pdf_writer
+    tests/test_pdf_writer.cpp
+    PdfWriter.cpp
+)
+target_include_directories(test_pdf_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT MSVC)
+    target_compile_options(test_pdf_writer PRIVATE -Wall -Wextra)
+endif()
+add_test(NAME pdf_writer COMMAND test_pdf_writer)
+
 # CLI behavior
 add_test(NAME cli_help COMMAND ascii_converter --help)
 add_test(NAME cli_no_args COMMAND ascii_converter)

@@ -40,12 +40,12 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 5. PdfWriter
 
-- [ ] Header, catalog, pages tree, Courier Type1 font object
-- [ ] One content stream per page (BT/Tf/TL/Td/Tj/T*)
-- [ ] String escaping for `(`, `)`, `\`
-- [ ] Line drawing for cut marks
-- [ ] xref table with exact byte offsets, trailer
-- [ ] Tests: `%PDF` header, `/Count` matches pages, every xref offset points at `N 0 obj`, escaping
+- [x] Header, catalog, pages tree, Courier Type1 font object
+- [x] One content stream per page (BT/Tf/TL/Td/Tj/T*)
+- [x] String escaping for `(`, `)`, `\`
+- [x] Line drawing for cut marks
+- [x] xref table with exact byte offsets, trailer
+- [x] Tests: `%PDF` header, `/Count` matches pages, every xref offset points at `N 0 obj`, escaping
 
 ## 6. Page content
 
