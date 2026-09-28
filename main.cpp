@@ -1,5 +1,3 @@
-/* Implementation of main CLI entry point for the ASCII Converter */
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -8,7 +6,6 @@
 #include <cstdlib> // For EXIT_SUCCESS/FAILURE
 #include <stdexcept>
 
-// Local header includes (assuming compiler finds them)
 #include "ImageConverter.h"
 
 /** Parses a whole argument as a number; exits with an error on invalid input. */
@@ -24,19 +21,17 @@ double parse_number(const std::string& option, const char* value) {
 }
 
 /**
- * @brief Parses command-line arguments according to the README specification.
+ * @brief Parses command-line arguments (see README).
  *
  * Expects: ascii_converter [options] <image_path>
- * Options: --width, --height, --brightness, --contrast, --output
+ * Options: --width, --height, --brightness, --contrast, --charset, --output
  *
- * @param argc Argument count (argc > 1 expected).
- * @param argv Argument vector.
- * @return std::string The path to the image file, or an empty string if none provided.
+ * @return The path to the image file, or an empty string if none provided.
  */
 std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& out_b, double& out_c, std::string& out_p, std::string& out_cs) {
     std::string image_path = "";
 
-    // Default values initialization (matching README table defaults where applicable)
+    // Defaults match the README options table.
     out_w = 0; // Auto-detect
     out_h = 0; // Auto-detect
     out_b = 0.0;
@@ -44,7 +39,6 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
     out_p = ""; // Output to console by default
     out_cs = ImageConverter::charsetNames().front();
 
-    // Basic argument parsing loop (Needs robust library implementation in a real app)
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
 
@@ -105,10 +99,9 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // --- 2. Initialize and Run Converter (FIXED FLOW) ---
-    ImageConverter converter(image_file); // Use constructor that takes image path!
+    // --- 2. Configure and run converter ---
+    ImageConverter converter(image_file);
 
-    // Apply user-specified parameters (assuming setters now exist)
     converter.setWidth(width);
     converter.setHeight(height);
     if (!converter.setBrightness(brightness)) {
@@ -131,10 +124,6 @@ int main(int argc, char* argv[]) {
     std::cerr << "==============================================\n";
 
 
-    // Core execution flow revised to use the proper sequence of method calls:
-    // (loadAndGrayscale is called internally by convert())
-
-    // The conversion call now encapsulates all subsequent steps (Aspect Ratio -> Resize -> Adjust)
     try {
         std::string ascii_art = converter.convert();
 

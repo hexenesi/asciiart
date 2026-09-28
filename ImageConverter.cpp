@@ -6,15 +6,11 @@
 // Compile the stb_image implementation in this translation unit only.
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-// --- Constructor and Setup ---
-
 ImageConverter::ImageConverter(const std::string& image_path)
     : m_image_path(image_path) {}
 
-// --- Core Steps Implementation ---
-
 bool ImageConverter::loadAndGrayscale() {
-    if (m_image_path.empty()) { // Ensure an image path was set before calling load
+    if (m_image_path.empty()) {
         std::cerr << "[ERROR] Cannot load: Internal image path is not set." << std::endl;
         return false;
     }
@@ -22,7 +18,7 @@ bool ImageConverter::loadAndGrayscale() {
     
 
     int channels_in_file = 0;
-    // stbi_load reads the image data. It returns NULL on failure. We force 4 channels for consistency.
+    // Force 4 channels (RGBA) regardless of the file format.
     unsigned char* raw_data = stbi_load(m_image_path.c_str(), &m_source_width, &m_source_height, &channels_in_file, 4);
 
     if (!raw_data) {
@@ -33,30 +29,17 @@ bool ImageConverter::loadAndGrayscale() {
         return false;
     }
 
-    // Allocate memory for the pixel representation (we store it as RGBA, but only use the intensity).
     size_t total_pixels = static_cast<size_t>(m_source_width) * static_cast<size_t>(m_source_height);
     m_pixels.resize(total_pixels);
 
-    // Convert loaded raw RGB/RGBA data into our internal Pixel structure and calculate perceived grayscale intensity.
     for (size_t i = 0; i < total_pixels; ++i) {
-        // Calculate the offset for the current pixel in the raw buffer
-        size_t offset = i * 4;
-
-        // Use standard luminosity calculation for perceived grayscale intensity: Y = 0.299R + 0.587G + 0.114B
-        double intensity_double = (raw_data[offset] * 0.299) +
-                                   (raw_data[offset+1] * 0.587) +
-                                   (raw_data[offset+2] * 0.114);
-
-        // Store the resulting pixel, keeping R/G/B components for potential future use, but basing intensity on 'intensity'.
-        m_pixels[i] = {
-            static_cast<unsigned char>(round(intensity_double)), // Use calculated grayscale value for all channels initially
-            static_cast<unsigned char>(round(intensity_double)),
-            static_cast<unsigned char>(round(intensity_double)),
-            255                                                   // Assume fully opaque for now
-        };
+        const unsigned char* rgba = raw_data + i * 4;
+        // Perceived luminance (Rec. 601): Y = 0.299R + 0.587G + 0.114B
+        auto y = static_cast<unsigned char>(std::round(rgba[0] * 0.299 + rgba[1] * 0.587 + rgba[2] * 0.114));
+        m_pixels[i] = {y, y, y, 255};
     }
 
-    stbi_image_free(raw_data); // IMPORTANT: Free the memory allocated by stb_image.
+    stbi_image_free(raw_data);
     std::cerr << "[SUCCESS] Image data loaded and converted to grayscale buffer ("
               << m_source_width << "x" << m_source_height << ").\n";
     return true;
@@ -64,15 +47,13 @@ bool ImageConverter::loadAndGrayscale() {
 
 
 void ImageConverter::applyAspectRatioCorrection() {
-    // Check if width and height are still zero (i.e., user didn't set them) or if default needs to be enforced.
     if (m_source_width == 0 || m_source_height == 0) {
         std::cerr << "[WARNING] Source dimensions are zero. Aspect ratio correction skipped." << std::endl;
         return;
     }
 
-    // Placeholder constants based on README: Character aspect ratio is typically W/H = 2.0
+    // Monospace glyphs are about twice as tall as wide.
     const double CHARACTER_ASPECT_RATIO = 2.0; 
-    // We also track the source aspect ratio for better proportionality checks.
     double source_aspect_ratio = static_cast<double>(m_source_width) / m_source_height;
 
     bool width_set = (m_width != 0);
@@ -112,7 +93,6 @@ void ImageConverter::applyAspectRatioCorrection() {
              std::cerr << "[INFO] User specified dimensions preserve aspect ratio well." << std::endl;
         }
     }
-    // After this function, m_width and m_height should contain the final target dimensions for resizing.
 }
 
 bool ImageConverter::resizePixels() {
@@ -129,36 +109,19 @@ bool ImageConverter::resizePixels() {
         return true;
     }
 
-    // Nearest Neighbor Interpolation Logic: Map each pixel (x', y') in the target grid 
-    // back to the nearest source coordinate (x, y).
+    // Nearest-neighbor: each target pixel samples the source pixel under its center.
     std::vector<Pixel> resized(final_size);
 
     for (int y_target = 0; y_target < m_height; ++y_target) {
         for (int x_target = 0; x_target < m_width; ++x_target) {
-            // Map target coordinates back to source coordinates (Nearest Neighbor)
-            // Source indices must be cast carefully as the math requires doubles for ratios.
-            // Sample at target pixel centers; safe for 1-pixel dimensions (no division by n-1).
             double src_x_ratio = (x_target + 0.5) * m_source_width / m_width;
             double src_y_ratio = (y_target + 0.5) * m_source_height / m_height;
 
             int src_x = std::min(static_cast<int>(src_x_ratio), m_source_width - 1);
             int src_y = std::min(static_cast<int>(src_y_ratio), m_source_height - 1);
 
-            // !!! CRITICAL BOUNDARY CHECK ADDED HERE TO PREVENT ASSERTION FAILURE !!!
-            if (src_x < 0 || src_x >= m_source_width || src_y < 0 || src_y >= m_source_height) {
-                std::cerr << "[CRITICAL] Source coordinate (" << src_x << ", " << src_y 
-                          << ") is out of bounds [0," << m_source_width-1 << "," << m_source_height-1 << "]. Skipping pixel." << std::endl;
-                // Set the destination pixel to black/default if source data is invalid
-                resized[y_target * m_width + x_target] = {0, 0, 0, 255};
-                continue; 
-            }
-            // Calculate the linear index for the source pixel (in the original m_pixels buffer)
             size_t source_index = static_cast<size_t>(src_y) * m_source_width + src_x;
-            
-            // The destination pixel index (row-major order in the new, smaller buffer)
             size_t target_index = static_cast<size_t>(y_target) * m_width + x_target;
-
-            // Copy the intensity data from the source pixel to the target pixel
             resized[target_index] = m_pixels[source_index];
         }
     }
@@ -236,40 +199,28 @@ const std::string& ImageConverter::mapIntensityToChar(unsigned char intensity) c
 }
 
 std::string ImageConverter::generateAsciiArt()  {
-    // ===============================================================
-    // !!! PLACEHOLDER START: FINAL ASCII STRING GENERATION !!!
-    // Iterate over the m_pixels buffer (m_width * m_height). For each pixel,
-    // extract the grayscale intensity value and pass it to mapIntensityToChar().
-    // Concatenate all characters row by row into a single string.
-    // ===============================================================
-
     std::string ascii_art;
-    ascii_art.reserve(static_cast<size_t>(m_height) * (m_width + 1)); // Reserve space for performance
+    ascii_art.reserve(static_cast<size_t>(m_height) * (m_width + 1));
 
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {
-            // Calculate linear index (assuming row-major order)
             size_t index = static_cast<size_t>(y) * m_width + x;
 
-            // Retrieve the grayscale intensity from the pixel (since R, G, and B are same, we just use R)
             unsigned char intensity = m_pixels[index].r;
             ascii_art += mapIntensityToChar(intensity);
         }
-        ascii_art += '\n'; // Add newline character at the end of each row
+        ascii_art += '\n';
     }
 
     return ascii_art;
 }
 
 
-// --- Public Interface Methods ---
-
 std::string ImageConverter::convert() {
     if (!loadAndGrayscale()) {
         throw std::runtime_error("Failed to load or process image data.");
     }
 
-    // *** NEW STEP ORDER ***
     // Start from the requested size so repeated calls give the same result.
     m_width = m_requested_width;
     m_height = m_requested_height;

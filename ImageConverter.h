@@ -3,18 +3,15 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
 #include <cmath>
 #include <algorithm>
 
-// Definition of a pixel color structure for easy handling.
 struct Pixel {
-    unsigned char r, g, b, a; // RGBA components (using unsigned char for byte precision)
+    unsigned char r, g, b, a; // RGBA; after loading, r = g = b = grayscale intensity
 };
 
 /**
  * @brief Manages the entire process of converting an image to ASCII art.
- * Implements object-oriented design pattern based on plan approval.
  */
 class ImageConverter {
 public:
