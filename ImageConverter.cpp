@@ -16,7 +16,7 @@ ImageConverter::ImageConverter(const std::string& image_path)
 ImageConverter::ImageConverter() 
     : m_image_path("") // Empty string means no image loaded yet
 {
-    std::cout << "[SETUP] ImageConverter object instantiated without an initial file path." << std::endl;
+    std::cerr << "[SETUP] ImageConverter object instantiated without an initial file path." << std::endl;
 }
 
 // Destructor required for completeness, though minimal logic shown.
@@ -29,7 +29,7 @@ bool ImageConverter::loadAndGrayscale() {
         std::cerr << "[ERROR] Cannot load: Internal image path is not set." << std::endl;
         return false;
     }
-    std::cout << "[INFO] Attempting to load image from: " << m_image_path << std::endl;
+    std::cerr << "[INFO] Attempting to load image from: " << m_image_path << std::endl;
     
 
     int channels_in_file = 0;
@@ -68,7 +68,7 @@ bool ImageConverter::loadAndGrayscale() {
     }
 
     stbi_image_free(raw_data); // IMPORTANT: Free the memory allocated by stb_image.
-    std::cout << "[SUCCESS] Image data loaded and converted to grayscale buffer ("
+    std::cerr << "[SUCCESS] Image data loaded and converted to grayscale buffer ("
               << m_source_width << "x" << m_source_height << ").\n";
     return true;
 }
@@ -91,24 +91,24 @@ void ImageConverter::applyAspectRatioCorrection() {
 
     if (!width_set && !height_set) {
         // Case A: Nothing set. Default to source width, adjusting height for character aspect ratio.
-        std::cout << "[INFO] No dimensions set. Calculating target dimensions based on optimal scaling." << std::endl;
+        std::cerr << "[INFO] No dimensions set. Calculating target dimensions based on optimal scaling." << std::endl;
         m_width = m_source_width;
         m_height = static_cast<int>(std::round(static_cast<double>(m_source_height) / CHARACTER_ASPECT_RATIO));
         if (m_height == 0) m_height = 1;
-        std::cout << "[INFO] Using source width and adjusted height: " << m_width << "x" << m_height << std::endl;
+        std::cerr << "[INFO] Using source width and adjusted height: " << m_width << "x" << m_height << std::endl;
 
     } else if (!width_set && height_set) {
         // Case B: Height set (Fixed H). Calculate Width based on source aspect ratio and CHARACTER standard.
         m_width = static_cast<int>(std::round(static_cast<double>(m_height) * source_aspect_ratio * CHARACTER_ASPECT_RATIO));
         if (m_width == 0) m_width = 1;
-        std::cout << "[INFO] Setting Width based on provided Height (" << m_height 
+        std::cerr << "[INFO] Setting Width based on provided Height (" << m_height 
                   << ") to preserve aspect ratio: " << m_width << "x" << m_height << std::endl;
 
     } else if (width_set && !height_set) {
         // Case C: Width set (Fixed W). Calculate Height based on source aspect ratio and CHARACTER standard.
         m_height = static_cast<int>(std::round(static_cast<double>(m_width) / (source_aspect_ratio * CHARACTER_ASPECT_RATIO)));
         if (m_height == 0) m_height = 1;
-        std::cout << "[INFO] Setting Height based on provided Width (" << m_width 
+        std::cerr << "[INFO] Setting Height based on provided Width (" << m_width 
                   << ") to preserve aspect ratio: " << m_width << "x" << m_height << std::endl;
 
     } else { 
@@ -116,10 +116,10 @@ void ImageConverter::applyAspectRatioCorrection() {
         double target_ratio = static_cast<double>(m_width) / m_height;
         double expected_ratio = source_aspect_ratio * CHARACTER_ASPECT_RATIO;
         if (std::abs(target_ratio - expected_ratio) > 0.25) {
-             std::cout << "[WARNING] User specified dimensions (" << m_width << "x" << m_height 
+             std::cerr << "[WARNING] User specified dimensions (" << m_width << "x" << m_height 
                        << ") significantly deviate from the source aspect ratio. Image may be stretched." << std::endl;
         } else {
-             std::cout << "[INFO] User specified dimensions preserve aspect ratio well." << std::endl;
+             std::cerr << "[INFO] User specified dimensions preserve aspect ratio well." << std::endl;
         }
     }
     // After this function, m_width and m_height should contain the final target dimensions for resizing.
@@ -135,7 +135,7 @@ bool ImageConverter::resizePixels() {
 
     // Check if target dimensions match source dimensions, in which case no operation is needed.
     if (m_source_width == static_cast<size_t>(m_width) && m_source_height == static_cast<size_t>(m_height)) {
-        std::cout << "[INFO] Source and target dimensions match. Skipping resize.\n";
+        std::cerr << "[INFO] Source and target dimensions match. Skipping resize.\n";
         return true;
     }
 
@@ -173,7 +173,7 @@ bool ImageConverter::resizePixels() {
         }
     }
     m_pixels = std::move(resized);
-    std::cout << "[SUCCESS] Pixel data resized via Nearest Neighbor Interpolation to " << m_width << "x" << m_height << "." << std::endl;
+    std::cerr << "[SUCCESS] Pixel data resized via Nearest Neighbor Interpolation to " << m_width << "x" << m_height << "." << std::endl;
     return true;
 }
 
@@ -187,7 +187,7 @@ bool ImageConverter::adjustPixelIntensity() {
     // This operation must be performed on every pixel in m_pixels.
     // ===============================================================
 
-    std::cout << "[INFO] Applying Brightness (" << m_brightness << ") and Contrast (" << m_contrast << ").\n";
+    std::cerr << "[INFO] Applying Brightness (" << m_brightness << ") and Contrast (" << m_contrast << ").\n";
     
 
     for (size_t i = 0; i < m_pixels.size(); ++i) {
@@ -214,7 +214,7 @@ bool ImageConverter::adjustPixelIntensity() {
         m_pixels[i].g = new_intensity;
         m_pixels[i].b = new_intensity;
     }
-    std::cout << "[SUCCESS] Pixel intensities adjusted for Brightness/Contrast.\n";
+    std::cerr << "[SUCCESS] Pixel intensities adjusted for Brightness/Contrast.\n";
     return true;
 }
 
@@ -278,6 +278,6 @@ std::string ImageConverter::convert() {
     resizePixels();
     adjustPixelIntensity();
 
-    std::cout << "\n[INFO] Conversion steps completed. Generating final ASCII art...\n";
+    std::cerr << "\n[INFO] Conversion steps completed. Generating final ASCII art...\n";
     return generateAsciiArt();
 }

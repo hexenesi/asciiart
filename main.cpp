@@ -104,9 +104,9 @@ int main(int argc, char* argv[]) {
     converter.setContrast(contrast);
     converter.setOutputPath(output_path);
 
-    std::cout << "\n==============================================\n";
-    std::cout << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
-    std::cout << "==============================================\n";
+    std::cerr << "\n==============================================\n";
+    std::cerr << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
+    std::cerr << "==============================================\n";
 
 
     // Core execution flow revised to use the proper sequence of method calls:
@@ -126,16 +126,16 @@ int main(int argc, char* argv[]) {
             if (outfile.is_open()) {
                 outfile << ascii_art;
                 outfile.close();
-                std::cout << "\n[SUCCESS] Conversion complete! Saved art to: " << output_path << std::endl;
+                std::cerr << "\n[SUCCESS] Conversion complete! Saved art to: " << output_path << std::endl;
             } else {
                 std::cerr << "[ERROR] Could not open file for writing: " << output_path << ". Printing to console instead.\n";
                 std::cout << ascii_art; // Fallback to cout
             }
         } else {
             // Output directly to stdout (console)
-            std::cout << "\n==============================================\n";
-            std::cout << "       ASCII Art Preview (Output to Console)    \n";
-            std::cout << "==============================================\n";
+            std::cerr << "\n==============================================\n";
+            std::cerr << "       ASCII Art Preview (Output to Console)    \n";
+            std::cerr << "==============================================\n";
             std::cout << ascii_art;
         }
 
