@@ -115,11 +115,6 @@ int main(int argc, char* argv[]) {
     if (!converter.setContrast(opts.contrast)) fail("--contrast must be 0 or greater.");
     if (!converter.setCharset(opts.charset)) fail("unknown charset '" + opts.charset + "'.");
 
-    std::cerr << "\n==============================================\n";
-    std::cerr << "   🚀 Starting ASCII Art Conversion Process 🖼️  \n";
-    std::cerr << "==============================================\n";
-
-
     try {
         std::string ascii_art = converter.convert();
 
@@ -133,21 +128,17 @@ int main(int argc, char* argv[]) {
             if (outfile.is_open()) {
                 outfile << ascii_art;
                 outfile.close();
-                std::cerr << "\n[SUCCESS] Conversion complete! Saved art to: " << opts.output_path << std::endl;
+                std::cerr << "[SUCCESS] Conversion complete! Saved art to: " << opts.output_path << std::endl;
             } else {
                 std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path << ". Printing to console instead.\n";
                 std::cout << ascii_art; // Fallback to cout
             }
         } else {
-            // Output directly to stdout (console)
-            std::cerr << "\n==============================================\n";
-            std::cerr << "       ASCII Art Preview (Output to Console)    \n";
-            std::cerr << "==============================================\n";
             std::cout << ascii_art;
         }
 
     } catch (const std::exception& e) {
-        std::cerr << "\n[FATAL ERROR] Conversion failed: " << e.what() << std::endl;
+        std::cerr << "[FATAL ERROR] Conversion failed: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 

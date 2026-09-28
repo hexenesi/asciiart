@@ -228,6 +228,6 @@ std::string ImageConverter::convert() {
     resizePixels();
     adjustPixelIntensity();
 
-    std::cerr << "\n[INFO] Conversion steps completed. Generating final ASCII art...\n";
+    std::cerr << "[INFO] Conversion steps completed. Generating final ASCII art...\n";
     return generateAsciiArt();
 }
