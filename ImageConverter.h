@@ -7,7 +7,7 @@
 #include <algorithm>
 
 struct Pixel {
-    unsigned char r, g, b, a; // RGBA; after loading, r = g = b = grayscale intensity
+    unsigned char r, g, b, a; // After loading: r = g = b = grayscale intensity, a = alpha
 };
 
 /**
@@ -58,6 +58,9 @@ public:
      */
     bool setCharset(const std::string& name);
 
+    /** Maps dark pixels to light glyphs, for light-on-dark terminals. */
+    void setInvert(bool invert) { m_invert = invert; }
+
     /** Names of the available charset presets, default first. */
     static std::vector<std::string> charsetNames();
 
@@ -68,6 +71,7 @@ private:
     int m_requested_height{0}; // 0 = automatic
     double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
+    bool m_invert{false};
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
     std::vector<std::string> m_charset;
 

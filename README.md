@@ -118,6 +118,8 @@ ascii_converter foto.png \
 | `--contrast`   | Factor de contraste (≥ 0; 1 = sin cambio, 0 = gris plano) | 1.0 |
 | `--output`     | Archivo de salida        | Consola           |
 | `--charset`    | Conjunto de caracteres   | `standard`        |
+| `--invert`     | Invierte la escala (texto claro sobre fondo oscuro) | desactivado |
+| `--help`, `-h` | Muestra la ayuda         |                   |
 
 ### Conjuntos de caracteres (`--charset`)
 
@@ -150,7 +152,9 @@ Negro ---------------------------- Blanco
 (especial: espacio)
 ```
 
-Los píxeles oscuros producen caracteres más densos, mientras que los claros generan caracteres más ligeros o espacios.
+Los píxeles oscuros producen caracteres más densos, mientras que los claros generan caracteres más ligeros o espacios. Con `--invert` la relación se invierte, lo que suele verse mejor en terminales con fondo oscuro.
+
+Las zonas transparentes (PNG con canal alfa) se tratan como vacías y se representan con espacios, tanto en modo normal como invertido.
 
 ## Dependencias
 
@@ -212,7 +216,6 @@ ascii_converter foto.png > arte.txt
 * Procesamiento en paralelo para imágenes grandes.
 * Paletas de caracteres definidas por el usuario (además de los presets).
 * Factor de corrección de aspecto configurable.
-* Opción para invertir la escala (terminales con fondo oscuro).
 
 ## Licencia
 

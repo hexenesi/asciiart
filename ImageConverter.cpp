@@ -36,7 +36,7 @@ bool ImageConverter::loadAndGrayscale() {
         const unsigned char* rgba = raw_data + i * 4;
         // Perceived luminance (Rec. 601): Y = 0.299R + 0.587G + 0.114B
         auto y = static_cast<unsigned char>(std::round(rgba[0] * 0.299 + rgba[1] * 0.587 + rgba[2] * 0.114));
-        m_pixels[i] = {y, y, y, 255};
+        m_pixels[i] = {y, y, y, rgba[3]};
     }
 
     stbi_image_free(raw_data);
@@ -206,8 +206,13 @@ std::string ImageConverter::generateAsciiArt()  {
         for (int x = 0; x < m_width; ++x) {
             size_t index = static_cast<size_t>(y) * m_width + x;
 
-            unsigned char intensity = m_pixels[index].r;
-            ascii_art += mapIntensityToChar(intensity);
+            const Pixel& pixel = m_pixels[index];
+            // Invert for light-on-dark terminals, then blend transparent pixels toward
+            // the lightest glyph (blank) so they stay empty in both modes.
+            double v = m_invert ? 255.0 - pixel.r : pixel.r;
+            double alpha = pixel.a / 255.0;
+            v = alpha * v + (1.0 - alpha) * 255.0;
+            ascii_art += mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
         }
         ascii_art += '\n';
     }

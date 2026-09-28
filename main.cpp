@@ -15,6 +15,7 @@ struct Options {
     double contrast = 1.0;
     std::string charset = ImageConverter::charsetNames().front();
     std::string output_path; // empty = stdout
+    bool invert = false;
 };
 
 void print_usage(std::ostream& out) {
@@ -28,6 +29,7 @@ void print_usage(std::ostream& out) {
            "  --charset <name>    Character set:";
     for (const auto& name : ImageConverter::charsetNames()) out << ' ' << name;
     out << " (default: " << ImageConverter::charsetNames().front() << ")\n"
+           "  --invert            Invert intensities (for light text on dark background)\n"
            "  --output <file>     Write to file instead of stdout\n"
            "  -h, --help          Show this help\n"
            "\n"
@@ -74,7 +76,9 @@ Options parse_args(int argc, char* argv[]) {
             std::exit(EXIT_SUCCESS);
         }
 
-        if (arg.size() > 1 && arg[0] == '-') {
+        if (arg == "--invert") {
+            opts.invert = true;
+        } else if (arg.size() > 1 && arg[0] == '-') {
             bool known = arg == "--width" || arg == "--height" || arg == "--brightness" ||
                          arg == "--contrast" || arg == "--charset" || arg == "--output";
             if (!known) fail("unknown option '" + arg + "'.");
@@ -111,6 +115,7 @@ int main(int argc, char* argv[]) {
 
     converter.setWidth(opts.width);
     converter.setHeight(opts.height);
+    converter.setInvert(opts.invert);
     if (!converter.setBrightness(opts.brightness)) fail("--brightness must be between -100 and 100.");
     if (!converter.setContrast(opts.contrast)) fail("--contrast must be 0 or greater.");
     if (!converter.setCharset(opts.charset)) fail("unknown charset '" + opts.charset + "'.");
