@@ -214,7 +214,23 @@ Las zonas transparentes (PNG con canal alfa) se tratan como vacías y se represe
 
 El proyecto puede compilar utilizando cualquier compilador compatible con **C++17** o superior.
 
-Para cargar imágenes se utiliza [stb_image](https://github.com/nothings/stb), incluida en `include/` (no requiere instalación).
+Para cargar imágenes se utiliza [stb_image](https://github.com/nothings/stb), incluida en `third_party/stb/` (no requiere instalación).
+
+## Estructura del proyecto
+
+```text
+src/                 Código fuente
+  main.cpp           Línea de comandos
+  ImageConverter.*   Carga, escala de grises, redimensionado y conversión a caracteres
+  PageLayout.*       División en páginas (papel, orientación, vecinas)
+  PdfWriter.*        Escritor de PDF mínimo, sin dependencias
+  PosterRenderer.*   Contenido de las páginas del póster
+tests/               Pruebas unitarias y de línea de comandos
+  data/              Imagen de prueba
+third_party/stb/     stb_image.h
+docs/                Plan y lista de tareas de la salida PDF
+samples/             Imágenes y PDF locales (ignorado por git)
+```
 
 ## Compilación
 

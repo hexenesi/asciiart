@@ -5,69 +5,43 @@ project(ASCIIConverter LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_executable(ascii_converter
-    main.cpp
-    ImageConverter.cpp
-    PageLayout.cpp
-    PdfWriter.cpp
-    PosterRenderer.cpp
-)
-# PosterRenderer.h and friends live in the project root.
-target_include_directories(ascii_converter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-# Vendored single-header libraries (stb_image). STB_IMAGE_IMPLEMENTATION is
-# defined in ImageConverter.cpp only, so the implementation is compiled once.
-target_include_directories(ascii_converter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+# Warning flags shared by all targets.
+add_library(project_warnings INTERFACE)
 if(MSVC)
-    target_compile_options(ascii_converter PRIVATE /W4)
+    target_compile_options(project_warnings INTERFACE /W4)
 else()
-    target_compile_options(ascii_converter PRIVATE -Wall -Wextra)
+    target_compile_options(project_warnings INTERFACE -Wall -Wextra)
 endif()
+
+# Conversion, page layout and PDF code, shared by the CLI and the tests.
+# STB_IMAGE_IMPLEMENTATION is defined in src/ImageConverter.cpp only.
+add_library(asciiart_core STATIC
+    src/ImageConverter.cpp
+    src/PageLayout.cpp
+    src/PdfWriter.cpp
+    src/PosterRenderer.cpp
+)
+target_include_directories(asciiart_core
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
+)
+target_link_libraries(asciiart_core PRIVATE project_warnings)
+
+add_executable(ascii_converter src/main.cpp)
+target_link_libraries(ascii_converter PRIVATE asciiart_core project_warnings)
 
 # --- Tests (run with: ctest --test-dir <build dir>) ---
 enable_testing()
 
-add_executable(test_image_converter
-    tests/test_image_converter.cpp
-    ImageConverter.cpp
-)
-target_include_directories(test_image_converter PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include)
-if(NOT MSVC)
-    target_compile_options(test_image_converter PRIVATE -Wall -Wextra)
-endif()
+foreach(test_name test_image_converter test_page_layout test_pdf_writer test_poster_renderer)
+    add_executable(${test_name} tests/${test_name}.cpp)
+    target_link_libraries(${test_name} PRIVATE asciiart_core project_warnings)
+endforeach()
+
+# Unit tests write their PNG fixtures to the working directory.
 add_test(NAME unit COMMAND test_image_converter WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-add_executable(test_page_layout
-    tests/test_page_layout.cpp
-    PageLayout.cpp
-)
-target_include_directories(test_page_layout PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-if(NOT MSVC)
-    target_compile_options(test_page_layout PRIVATE -Wall -Wextra)
-endif()
 add_test(NAME page_layout COMMAND test_page_layout)
-
-add_executable(test_pdf_writer
-    tests/test_pdf_writer.cpp
-    PdfWriter.cpp
-)
-target_include_directories(test_pdf_writer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-if(NOT MSVC)
-    target_compile_options(test_pdf_writer PRIVATE -Wall -Wextra)
-endif()
 add_test(NAME pdf_writer COMMAND test_pdf_writer)
-
-add_executable(test_poster_renderer
-    tests/test_poster_renderer.cpp
-    PosterRenderer.cpp
-    PageLayout.cpp
-    PdfWriter.cpp
-)
-target_include_directories(test_poster_renderer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-if(NOT MSVC)
-    target_compile_options(test_poster_renderer PRIVATE -Wall -Wextra)
-endif()
 add_test(NAME poster_renderer COMMAND test_poster_renderer)
 
 # CLI behavior
