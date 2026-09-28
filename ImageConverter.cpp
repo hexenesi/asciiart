@@ -126,11 +126,11 @@ void ImageConverter::applyAspectRatioCorrection() {
 
 bool ImageConverter::resizePixels() {
     if(m_pixels.empty()) return false;
-    int final_size = m_width * m_height;
-    if (final_size == 0) {
+    if (m_width <= 0 || m_height <= 0) {
         std::cerr << "[WARNING] Width and Height not set or invalid (setWidth/setHeight missing). Skipping resize.\n";
         return false;
     }
+    size_t final_size = static_cast<size_t>(m_width) * m_height;
 
     // Check if target dimensions match source dimensions, in which case no operation is needed.
     if (m_source_width == static_cast<size_t>(m_width) && m_source_height == static_cast<size_t>(m_height)) {

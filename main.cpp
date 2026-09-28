@@ -88,6 +88,11 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (width < 0 || height < 0) {
+        std::cerr << "Error: --width and --height must be positive integers.\n";
+        return EXIT_FAILURE;
+    }
+
     // --- 2. Initialize and Run Converter (FIXED FLOW) ---
     ImageConverter converter(image_file); // Use constructor that takes image path!
 
