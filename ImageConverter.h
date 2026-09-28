@@ -58,6 +58,16 @@ public:
      */
     bool setCharset(const std::string& name);
 
+    /**
+     * @brief Sets the glyph cell aspect (line height / character width). Default 2.0.
+     * @return false if not a positive finite number; the current value is kept.
+     */
+    bool setCharAspect(double aspect) {
+        if (!(aspect > 0.0 && std::isfinite(aspect))) return false;
+        m_char_aspect = aspect;
+        return true;
+    }
+
     /** Maps dark pixels to light glyphs, for light-on-dark terminals. */
     void setInvert(bool invert) { m_invert = invert; }
 
@@ -72,6 +82,7 @@ private:
     double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
     bool m_invert{false};
+    double m_char_aspect{2.0}; // Monospace cells are about twice as tall as wide.
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
     std::vector<std::string> m_charset;
 

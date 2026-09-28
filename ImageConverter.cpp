@@ -52,8 +52,7 @@ void ImageConverter::applyAspectRatioCorrection() {
         return;
     }
 
-    // Monospace glyphs are about twice as tall as wide.
-    const double CHARACTER_ASPECT_RATIO = 2.0; 
+    const double CHARACTER_ASPECT_RATIO = m_char_aspect;
     double source_aspect_ratio = static_cast<double>(m_source_width) / m_source_height;
 
     bool width_set = (m_width != 0);

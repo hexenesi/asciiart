@@ -10,10 +10,10 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 1. Configurable character aspect
 
-- [ ] Add `setCharAspect(double)` to `ImageConverter` (reject values <= 0)
-- [ ] Replace `CHARACTER_ASPECT_RATIO` constant with the member (default 2.0)
-- [ ] Tests: width-only and height-only sizing with a non-default aspect
-- [ ] Verify console output unchanged (existing tests pass)
+- [x] Add `setCharAspect(double)` to `ImageConverter` (reject values <= 0)
+- [x] Replace `CHARACTER_ASPECT_RATIO` constant with the member (default 2.0)
+- [x] Tests: width-only and height-only sizing with a non-default aspect
+- [x] Verify console output unchanged (existing tests pass)
 
 ## 2. Grid output
 

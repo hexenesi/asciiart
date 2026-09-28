@@ -148,6 +148,26 @@ void testHeightOnlyKeepsAspect() {
     CHECK(!rows.empty() && rows[0].size() == 40u);
 }
 
+void testCustomCharAspect() {
+    // 200x100 source, aspect 1.0: width 40 -> height 40 / (2.0 * 1.0) = 20
+    auto rows = lines(convert(solid("aspect", 200, 100, 0), [](ImageConverter& c) {
+        c.setCharAspect(1.0);
+        c.setWidth(40);
+    }));
+    CHECK(rows.size() == 20u);
+
+    // height 20 -> width 20 * 2.0 * 1.0 = 40
+    rows = lines(convert(solid("aspect", 200, 100, 0), [](ImageConverter& c) {
+        c.setCharAspect(1.0);
+        c.setHeight(20);
+    }));
+    CHECK(!rows.empty() && rows[0].size() == 40u);
+
+    ImageConverter c("unused.png");
+    CHECK(c.setCharAspect(1.67));
+    CHECK(!c.setCharAspect(0) && !c.setCharAspect(-1));
+}
+
 void testOnePixelOutput() {
     auto art = convert(solid("one", 50, 50, 0), [](ImageConverter& c) {
         c.setWidth(1);
@@ -237,6 +257,7 @@ int main() {
     testDefaultSizeCappedAt100();
     testWidthOnlyKeepsAspect();
     testHeightOnlyKeepsAspect();
+    testCustomCharAspect();
     testOnePixelOutput();
     testUpscaleKeepsContent();
     testCharsetMapping();
