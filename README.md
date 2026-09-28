@@ -173,6 +173,14 @@ cmake ..
 cmake --build .
 ```
 
+### Pruebas
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Incluye pruebas unitarias de `ImageConverter` (tamaños, conjuntos de caracteres, brillo/contraste, inversión, transparencia) y pruebas de la línea de comandos.
+
 ## Ejemplo de salida
 
 Un círculo con degradado radial (oscuro en el centro), con `--width 40`:
