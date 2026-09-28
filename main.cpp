@@ -6,6 +6,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib> // For EXIT_SUCCESS/FAILURE
+#include <stdexcept>
 
 // Local header includes (assuming compiler finds them)
 #include "ImageConverter.h"
@@ -112,13 +113,13 @@ int main(int argc, char* argv[]) {
     // (loadAndGrayscale is called internally by convert())
 
     // The conversion call now encapsulates all subsequent steps (Aspect Ratio -> Resize -> Adjust)
-    std::string ascii_art = converter.convert(); 
-
-    if (ascii_art.empty()) {
-        throw std::runtime_error("Conversion resulted in empty ASCII art after all processing stages.");
-    }
-
     try {
+        std::string ascii_art = converter.convert();
+
+        if (ascii_art.empty()) {
+            throw std::runtime_error("Conversion resulted in empty ASCII art after all processing stages.");
+        }
+
         // --- 3. Output Result ---
         if (!output_path.empty()) {
             std::ofstream outfile(output_path);

@@ -4,6 +4,7 @@
 // FIX: Keep macro definition here only once for this compilation unit.
 #define STB_IMAGE_IMPLEMENTATION 
 #include <iostream>
+#include <stdexcept>
 #include <include/stb_image.h> // Assuming stb_image.h is available
 // --- Constructor and Setup ---
 
