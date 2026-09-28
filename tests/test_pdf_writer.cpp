@@ -79,6 +79,7 @@ void testStructure() {
     pdf.text(54, 700, 8, "Page (1)");
     pdf.textLines(54, 680, 6, 6, {"@%#*", "+=-:", ". \\"});
     pdf.line(10, 10, 20, 20);
+    pdf.line(1, 2, 3, 4, 0.5, 0, true);
     pdf.beginPage(842, 595);
     pdf.rect(10, 10, 100, 50, 1, 0.5);
 
@@ -93,6 +94,8 @@ void testStructure() {
     CHECK(contains(out, "(Page \\(1\\)) Tj"));
     CHECK(contains(out, "6 TL 54 680 Td\n(@%#*) Tj\nT* (+=-:) Tj\nT* (. \\\\) Tj\n"));
     CHECK(contains(out, "0.5 G 1 w 10 10 100 50 re S"));
+    CHECK(contains(out, "0 G 0.5 w 10 10 m 20 20 l S"));
+    CHECK(contains(out, "0 G 0.5 w [2 2] 0 d 1 2 m 3 4 l S"));
     CHECK(xrefIsValid(out));
     CHECK(streamLengthsMatch(out));
     CHECK(pdf.pageCount() == 2);

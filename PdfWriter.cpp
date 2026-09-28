@@ -56,8 +56,8 @@ void PdfWriter::textLines(double x, double y, double font_size, double leading, 
     c += "ET\n";
 }
 
-void PdfWriter::line(double x1, double y1, double x2, double y2, double width, double gray) {
-    content() += "q " + num(gray) + " G " + num(width) + " w " + num(x1) + " " + num(y1) + " m " + num(x2) + " " +
+void PdfWriter::line(double x1, double y1, double x2, double y2, double width, double gray, bool dashed) {
+    content() += "q " + num(gray) + " G " + num(width) + " w " + (dashed ? "[2 2] 0 d " : "") + num(x1) + " " + num(y1) + " m " + num(x2) + " " +
                  num(y2) + " l S Q\n";
 }
 

@@ -23,6 +23,12 @@ bool contains(const std::string& haystack, const std::string& needle) {
     return haystack.find(needle) != std::string::npos;
 }
 
+size_t countOf(const std::string& haystack, const std::string& needle) {
+    size_t count = 0;
+    for (size_t pos = 0; (pos = haystack.find(needle, pos)) != std::string::npos; pos += needle.size()) ++count;
+    return count;
+}
+
 // Content streams in page order (PdfWriter writes each page's stream right after its page object).
 std::vector<std::string> pageContents(const std::string& pdf) {
     std::vector<std::string> out;
@@ -96,10 +102,30 @@ void testSinglePageHasNoNeighbours() {
     CHECK(!contains(pages[1], "(^ ") && !contains(pages[1], "(v ") && !contains(pages[1], "(<)") &&
           !contains(pages[1], "(>)"));
     CHECK(contains(pages[1], "(Page 1/1  row 1, col 1) Tj"));
-    // 8 cut-mark lines (2 per corner)
-    size_t lines = 0;
-    for (size_t pos = 0; (pos = pages[1].find(" l S", pos)) != std::string::npos; ++pos) ++lines;
-    CHECK(lines == 8u);
+    // 8 alignment-mark lines (2 per corner) and no trim marks without neighbours
+    CHECK(countOf(pages[1], " l S") == 8u);
+    CHECK(countOf(pages[1], "[2 2] 0 d") == 0u);
+}
+
+void testTrimMarks() {
+    // 3 x 3 grid; flaps only on edges joining a right or lower neighbour, 2 dashed ticks per flap.
+    auto pages = render(makeGrid(140 * 3, 114 * 3), PageSettings{});
+    auto dashed = [&](int number) { return countOf(pages[number], "[2 2] 0 d"); };
+    CHECK(dashed(1) == 4u); // right + down
+    CHECK(dashed(3) == 2u); // down only (right edge of the poster)
+    CHECK(dashed(7) == 2u); // right only (bottom edge)
+    CHECK(dashed(9) == 0u); // bottom-right corner
+    // Right flap cut line: 54 + 140 * 3.6 + 18 = 576
+    CHECK(contains(pages[1], "[2 2] 0 d 576 "));
+    // Bottom flap cut line: 738 - 114 * 6 - 18 = 36
+    CHECK(contains(pages[1], "36 m"));
+    CHECK(contains(pages[0], "dashed trim marks, keeping a 6 mm"));
+
+    PageSettings noFlap;
+    noFlap.glue_flap = 0;
+    auto flat = render(makeGrid(140 * 3, 114 * 3), noFlap);
+    for (size_t i = 1; i < flat.size(); ++i) CHECK(countOf(flat[i], "[2 2] 0 d") == 0u);
+    CHECK(contains(flat[0], "butt the pages together"));
 }
 
 void testEscapedGlyphs() {
@@ -131,6 +157,7 @@ int main() {
     testArtSlices();
     testNeighbourLabels();
     testSinglePageHasNoNeighbours();
+    testTrimMarks();
     testEscapedGlyphs();
     testRejectsInvalidGrid();
 

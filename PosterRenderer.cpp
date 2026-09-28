@@ -1,14 +1,15 @@
 #include "PosterRenderer.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <stdexcept>
 #include <vector>
 
 namespace {
 
 constexpr double kLabelSize = 7.0;   // page and neighbour labels
-constexpr double kCutMarkLength = 8.0;
-constexpr double kCutMarkGap = 2.0;  // gap between art corner and mark
+constexpr double kMarkLength = 8.0;
+constexpr double kMarkGap = 2.0;  // gap between a mark and the edge it points at
 constexpr double kBaselineRatio = 0.8; // baseline sits this fraction of the line height below the cell top
 
 double textWidth(const std::string& s, double size) {
@@ -39,9 +40,10 @@ void validateGrid(const AsciiGrid& grid, const PageLayout& layout) {
     }
 }
 
-// Two short lines at each corner of the rectangle, pointing away from it.
-void drawCutMarks(PdfWriter& pdf, double left, double bottom, double right, double top) {
-    const double g = kCutMarkGap, l = kCutMarkLength;
+// Alignment marks: two short solid lines at each corner of the art slice, pointing away from it.
+// They mark the exact edge of the art, where the neighbouring sheet's edge must land.
+void drawAlignmentMarks(PdfWriter& pdf, double left, double bottom, double right, double top) {
+    const double g = kMarkGap, l = kMarkLength;
     for (double x : {left, right}) {
         for (double y : {bottom, top}) {
             double dx = (x == left) ? -1 : 1;
@@ -49,6 +51,27 @@ void drawCutMarks(PdfWriter& pdf, double left, double bottom, double right, doub
             pdf.line(x + dx * g, y, x + dx * (g + l), y, 0.3, 0.4);
             pdf.line(x, y + dy * g, x, y + dy * (g + l), 0.3, 0.4);
         }
+    }
+}
+
+// Trim marks: dashed ticks on the cut line of each glue flap, drawn outside the paper that is kept.
+// Flaps exist only on edges that join a right or lower neighbour; other edges are cut at the
+// alignment marks, so their cut line is already marked.
+void drawTrimMarks(PdfWriter& pdf, const Page& page, double flap, double left, double bottom, double right,
+                   double top) {
+    if (flap <= 0) return;
+    const double g = kMarkGap, l = kMarkLength;
+    const double kept_right = page.right ? right + flap : right;
+    const double kept_bottom = page.down ? bottom - flap : bottom;
+    if (page.right) {
+        const double x = right + flap;
+        pdf.line(x, top + g, x, top + g + l, 0.5, 0.0, true);
+        pdf.line(x, kept_bottom - g, x, kept_bottom - g - l, 0.5, 0.0, true);
+    }
+    if (page.down) {
+        const double y = bottom - flap;
+        pdf.line(left - g, y, left - g - l, y, 0.5, 0.0, true);
+        pdf.line(kept_right + g, y, kept_right + g + l, y, 0.5, 0.0, true);
     }
 }
 
@@ -68,10 +91,11 @@ void drawArtPage(PdfWriter& pdf, const AsciiGrid& grid, const PageLayout& layout
     }
     pdf.textLines(art_left, art_top - g.line_height * kBaselineRatio, settings.font_size, g.line_height, lines);
 
-    // Cut marks at the bounds of this page's slice.
+    // Marks at the bounds of this page's slice.
     const double slice_right = art_left + (page.col_end - page.col_begin) * g.char_width;
     const double slice_bottom = art_top - (page.row_end - page.row_begin) * g.line_height;
-    drawCutMarks(pdf, art_left, slice_bottom, slice_right, art_top);
+    drawAlignmentMarks(pdf, art_left, slice_bottom, slice_right, art_top);
+    drawTrimMarks(pdf, page, settings.glue_flap, art_left, slice_bottom, slice_right, art_top);
 
     // Labels sit just outside the slice, so partial pages keep them next to the art.
     const double center_x = (art_left + slice_right) / 2;
@@ -101,7 +125,8 @@ void drawArtPage(PdfWriter& pdf, const AsciiGrid& grid, const PageLayout& layout
     pdf.text(art_left, slice_bottom - band / 2 - label_baseline_offset, kLabelSize, own);
 }
 
-void drawOverviewPage(PdfWriter& pdf, const PageLayout& layout, const PosterInfo& info) {
+void drawOverviewPage(PdfWriter& pdf, const PageLayout& layout, const PageSettings& settings,
+                      const PosterInfo& info) {
     const PageGeometry& g = layout.geometry;
     pdf.beginPage(g.page_width, g.page_height);
 
@@ -119,9 +144,20 @@ void drawOverviewPage(PdfWriter& pdf, const PageLayout& layout, const PosterInfo
     };
     if (!info.details.empty()) lines.push_back(toAscii(info.details));
     lines.push_back("");
-    lines.push_back("Assembly: trim each page along its corner marks and join the pages as in the");
-    lines.push_back("map below. Each page shows its neighbours' numbers in the margins");
-    lines.push_back("(^ above, v below, < left, > right).");
+    if (settings.glue_flap > 0) {
+        char flap[16];
+        std::snprintf(flap, sizeof flap, "%.0f mm", settings.glue_flap * 25.4 / 72);
+        lines.push_back("Assembly: cut the left and top edges at the solid alignment marks. Cut the");
+        lines.push_back("right and bottom edges at the dashed trim marks, keeping a " + std::string(flap) +
+                        " glue flap.");
+        lines.push_back("Lay each page over its left and upper neighbours' flaps, with its edge on");
+        lines.push_back("their alignment marks, and glue.");
+    } else {
+        lines.push_back("Assembly: cut each page at its alignment marks (the corner marks) and");
+        lines.push_back("butt the pages together.");
+    }
+    lines.push_back("Join the pages as in the map below. Each page shows its neighbours' numbers in");
+    lines.push_back("the margins (^ above, v below, < left, > right).");
     const double info_size = 9, info_leading = 12;
     pdf.textLines(left, y, info_size, info_leading, lines);
     y -= info_leading * lines.size() + 12;
@@ -157,6 +193,6 @@ void drawOverviewPage(PdfWriter& pdf, const PageLayout& layout, const PosterInfo
 void renderPoster(const AsciiGrid& grid, const PageLayout& layout, const PageSettings& settings,
                   const PosterInfo& info, PdfWriter& pdf) {
     validateGrid(grid, layout);
-    drawOverviewPage(pdf, layout, info);
+    drawOverviewPage(pdf, layout, settings, info);
     for (const Page& page : layout.pages) drawArtPage(pdf, grid, layout, settings, page);
 }

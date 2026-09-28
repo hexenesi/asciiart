@@ -132,6 +132,14 @@ void testInvalidInput() {
     bigOverlap.overlap = 140; // >= cols per page
     CHECK(throwsInvalid([&] { computeLayout(10, 10, bigOverlap); }));
 
+    PageSettings wideFlap;
+    wideFlap.glue_flap = 36.5; // > 18 pt band + half the 36 pt margin
+    CHECK(throwsInvalid([&] { computeGeometry(wideFlap, false); }));
+    wideFlap.glue_flap = 36;
+    CHECK(!throwsInvalid([&] { computeGeometry(wideFlap, false); }));
+    wideFlap.glue_flap = -1;
+    CHECK(throwsInvalid([&] { computeGeometry(wideFlap, false); }));
+
     PageSettings badFont;
     badFont.font_size = 0;
     CHECK(throwsInvalid([&] { computeGeometry(badFont, false); }));

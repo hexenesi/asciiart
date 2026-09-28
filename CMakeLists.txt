@@ -98,7 +98,9 @@ foreach(case
         "page_option_without_pdf|--paper requires --pdf|--paper;a4"
         "blocks_in_pdf|not supported in PDF|--pdf;x.pdf;--charset;blocks"
         "bad_paper|--paper must be|--pdf;x.pdf;--paper;legal"
-        "too_many_pages|70 pages exceeds --max-pages 50|--pdf;x.pdf;--scale;20")
+        "too_many_pages|70 pages exceeds --max-pages 50|--pdf;x.pdf;--scale;20"
+        "glue_flap_too_wide|Glue flap is wider|--pdf;x.pdf;--glue-flap;40"
+        "glue_flap_without_pdf|--glue-flap requires --pdf|--glue-flap;10")
     string(REPLACE "|" ";" parts "${case}")
     list(GET parts 0 name)
     list(GET parts 1 expected)

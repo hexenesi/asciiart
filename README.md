@@ -147,6 +147,7 @@ ascii_converter foto.jpg --pdf poster.pdf --scale 2 --dry-run
 | `--font-size`   | Tamaño de la fuente Courier en puntos | 6 |
 | `--pages-wide`  | Escala la imagen para ocupar exactamente *n* páginas de ancho (no se combina con `--scale`) | — |
 | `--overlap`     | Caracteres repetidos entre páginas vecinas, para facilitar el pegado | 0 |
+| `--glue-flap`   | Pestaña de pegado (en puntos) en los bordes derecho e inferior que se unen a otra página; `0` = sin pestaña. Máximo 36 | 18 (0.25 in ≈ 6 mm) |
 | `--max-pages`   | Máximo de páginas; si se supera, no se escribe nada | 50 |
 | `--dry-run`     | Muestra el resumen (tamaño y número de páginas) sin escribir el PDF | — |
 
@@ -157,7 +158,8 @@ Contenido del PDF:
 * **Página de resumen** (primera): nombre de la imagen, tamaño en caracteres, número de páginas, papel y fuente, instrucciones de ensamblado y un mapa de la cuadrícula con el número de cada página.
 * **Páginas de la imagen**, numeradas por filas desde 1:
   * La imagen empieza en la misma posición en todas las hojas, para que encajen al unirlas.
-  * Marcas de corte en las esquinas.
+  * **Marcas de alineación** (esquinas continuas): el borde exacto de la imagen, donde debe quedar el borde de la hoja vecina.
+  * **Marcas de recorte** (discontinuas): solo en los bordes derecho e inferior que se unen a otra página; indican dónde cortar para dejar una pestaña de pegado de `--glue-flap` puntos.
   * Número de página y posición (`Page 5/9  row 2, col 2`).
   * Número de cada página vecina junto al borde correspondiente: `^` arriba, `v` abajo, `<` izquierda, `>` derecha.
 
@@ -168,6 +170,8 @@ Con cada ejecución se muestra un resumen en `stderr`, por ejemplo:
 ```
 
 **Atención al tamaño:** a 1 carácter por píxel, una foto de 4000×3000 píxeles necesita unas 600 hojas Carta a 6 pt. Use `--dry-run` para comprobarlo y `--pages-wide` o `--scale` para ajustar el tamaño.
+
+Ensamblado: corte los bordes izquierdo y superior por las marcas de alineación, y los bordes derecho e inferior por las marcas de recorte (conservando la pestaña). Coloque cada hoja sobre las pestañas de sus vecinas de la izquierda y de arriba, con su borde sobre las marcas de alineación de esas vecinas, y pegue. Con `--glue-flap 0` no hay pestañas: se corta todo por las marcas de alineación y las hojas se unen borde con borde.
 
 Para imprimir, use **tamaño real / 100 %** (sin "ajustar a la página"); si la impresora escala las hojas, las páginas vecinas no encajarán.
 

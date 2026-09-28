@@ -16,8 +16,9 @@ struct PosterInfo {
 /**
  * @brief Renders an overview page followed by one page per layout tile.
  *
- * Art pages: the art slice at the same origin on every sheet, corner cut marks at the
- * slice bounds, the page number and grid position, and neighbour numbers in the margins.
+ * Art pages: the art slice at the same origin on every sheet, alignment marks at the slice
+ * corners, dashed trim marks for glue flaps on edges with a right or lower neighbour, the
+ * page number and grid position, and neighbour numbers in the margins.
  * The overview page shows a map of the tile grid with page numbers.
  *
  * @throws std::invalid_argument if the grid does not match the layout or contains

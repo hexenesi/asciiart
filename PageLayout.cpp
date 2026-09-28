@@ -61,8 +61,12 @@ double charAspect(const PageSettings& settings) {
 
 PageGeometry computeGeometry(const PageSettings& settings, bool landscape) {
     if (!(settings.font_size > 0) || !(settings.leading > 0) || settings.margin < 0 ||
-        settings.label_band < 0 || settings.overlap < 0) {
+        settings.label_band < 0 || settings.overlap < 0 || !(settings.glue_flap >= 0)) {
         throw std::invalid_argument("Invalid page settings.");
+    }
+    // The flap and its trim marks must stay on the sheet, clear of the outer half of the margin.
+    if (settings.glue_flap > settings.label_band + settings.margin / 2) {
+        throw std::invalid_argument("Glue flap is wider than the space around the art.");
     }
 
     double short_side = settings.paper == Paper::A4 ? 595.0 : 612.0;

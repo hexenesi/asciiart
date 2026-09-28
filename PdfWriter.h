@@ -22,8 +22,9 @@ public:
     /** Draws lines top to bottom; the first baseline is at (x, y), each next one `leading` lower. */
     void textLines(double x, double y, double font_size, double leading, const std::vector<std::string>& lines);
 
-    /** Strokes a straight line. gray: 0 = black, 1 = white. */
-    void line(double x1, double y1, double x2, double y2, double width = 0.5, double gray = 0.0);
+    /** Strokes a straight line. gray: 0 = black, 1 = white. dashed: 2 pt on, 2 pt off. */
+    void line(double x1, double y1, double x2, double y2, double width = 0.5, double gray = 0.0,
+              bool dashed = false);
 
     /** Strokes a rectangle outline with its bottom-left corner at (x, y). */
     void rect(double x, double y, double w, double h, double width = 0.5, double gray = 0.0);

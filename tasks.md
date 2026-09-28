@@ -52,7 +52,7 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 - [x] Fixed art origin on every page so sheets align
 - [x] Page number + grid position in a corner
 - [x] Neighbour numbers centred in top/bottom/left/right margins (omitted at edges)
-- [x] Cut marks at art-area corners
+- [x] Corner marks at art-area corners (now alignment marks, see group 9)
 - [x] Overview page: grid map with numbers, image name, scale, paper, page count, assembly note
 - [x] Tests: labels present for middle page; absent neighbours at edges; overview is page 1 of the PDF
 
@@ -71,3 +71,13 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 - [x] README: new options, printing workflow, size warning
 - [ ] Manual print test: 2×2 grid on Letter and A4, check alignment and labels (needs a printer; print at 100% / actual size)
 - [x] Large-image run with `--dry-run` and a real PDF; check file size and time (962x1280 photo: 1:1 = 49 pages + overview, 0.26 s, 830 KB; A4 4 pages wide = 16 + overview, 0.11 s, 275 KB)
+
+## 9. Alignment vs trim marks
+
+- [x] Rename the existing corner marks to alignment marks (exact art edge)
+- [x] Dashed trim marks on right/bottom joining edges, `glue_flap` outside the art (default 18 pt = 0.25 in)
+- [x] `--glue-flap <pt>` option (0 = no flaps; max = label band + half the margin = 36 pt)
+- [x] Validate page settings before converting the image
+- [x] Overview assembly instructions for both modes
+- [x] Tests: dashed lines, trim positions and counts per page, flap validation, CLI errors
+- [x] README

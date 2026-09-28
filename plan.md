@@ -75,7 +75,8 @@ Outputs:
 - **Art pages:**
   - Page number and grid position in a corner (e.g. "7 · row 2, col 3").
   - Neighbour numbers centred in the matching margin (↑ 3, ↓ 11, ← 6, → 8).
-  - Light cut marks at the corners of the art area.
+  - Alignment marks (solid) at the corners of the art area: the exact art edge.
+  - Trim marks (dashed) on right/bottom edges that join a neighbour, `--glue-flap` points (default 18 = 0.25 in) outside the art, leaving a glue flap. Left/top edges are cut at the alignment marks and laid over the neighbour's flap.
 - The art area has the same position on every sheet, so neighbouring pages line up.
 
 ### 7. CLI

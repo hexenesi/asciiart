@@ -16,6 +16,7 @@ struct PageSettings {
     double margin = 36.0;     // unprintable edge, 0.5 in
     double label_band = 18.0; // extra space inside the margin for page/neighbour labels
     int overlap = 0;          // chars repeated on neighbouring pages
+    double glue_flap = 18.0;  // paper kept past right/bottom joining edges for gluing (0.25 in); 0 = none
 };
 
 /** Courier advance width as a fraction of the font size. */

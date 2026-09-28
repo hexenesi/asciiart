@@ -54,6 +54,8 @@ void print_usage(std::ostream& out) {
            "  --font-size <pt>    Courier size in points (default: 6)\n"
            "  --pages-wide <n>    Scale the art to exactly n pages across\n"
            "  --overlap <n>       Characters repeated on neighbouring pages (default: 0)\n"
+           "  --glue-flap <pt>    Glue flap kept past right/bottom joins, marked with dashed\n"
+           "                      trim marks; 0 = none (default: 18 pt = 0.25 in, max 36)\n"
            "  --max-pages <n>     Refuse to write more art pages than this (default: 50)\n"
            "  --dry-run           Print the page count and exit without writing\n"
            "\n"
@@ -103,9 +105,11 @@ Options parse_args(int argc, char* argv[]) {
     Options opts;
     const std::vector<std::string> value_options = {
         "--width", "--height",      "--scale",     "--brightness", "--contrast", "--charset",  "--output",
-        "--pdf",   "--orientation", "--font-size", "--pages-wide", "--overlap",  "--max-pages", "--paper"};
-    const std::vector<std::string> page_options = {"--paper",   "--orientation", "--font-size", "--pages-wide",
-                                                   "--overlap", "--max-pages",   "--dry-run"};
+        "--pdf",   "--orientation", "--font-size", "--pages-wide", "--overlap",  "--max-pages", "--paper",
+        "--glue-flap"};
+    const std::vector<std::string> page_options = {"--paper",     "--orientation", "--font-size",
+                                                   "--pages-wide", "--overlap",   "--max-pages",
+                                                   "--dry-run",    "--glue-flap"};
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -158,6 +162,9 @@ Options parse_args(int argc, char* argv[]) {
                 opts.pages_wide = parse_int(arg, value, 1);
             } else if (arg == "--overlap") {
                 opts.page.overlap = parse_int(arg, value, 0);
+            } else if (arg == "--glue-flap") {
+                opts.page.glue_flap = parse_number(arg, value);
+                if (!(opts.page.glue_flap >= 0)) fail("--glue-flap must be 0 or greater.");
             } else {
                 opts.max_pages = parse_int(arg, value, 1);
             }
@@ -183,6 +190,14 @@ void validate(const Options& opts) {
     }
     if (!opts.pdf_path.empty() && opts.charset == "blocks") {
         fail("the 'blocks' charset is not supported in PDF output (ASCII only).");
+    }
+    if (!opts.pdf_path.empty()) {
+        // Check page settings before the (possibly slow) conversion.
+        try {
+            computeGeometry(opts.page, opts.page.orientation == Orientation::Landscape);
+        } catch (const std::invalid_argument& e) {
+            fail(e.what());
+        }
     }
 }
 
