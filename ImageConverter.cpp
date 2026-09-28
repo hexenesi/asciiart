@@ -197,30 +197,25 @@ const std::string& ImageConverter::mapIntensityToChar(unsigned char intensity) c
     return glyphs[index];
 }
 
-std::string ImageConverter::generateAsciiArt()  {
-    std::string ascii_art;
-    ascii_art.reserve(static_cast<size_t>(m_height) * (m_width + 1));
+AsciiGrid ImageConverter::generateGrid() const {
+    AsciiGrid grid(m_height, std::vector<std::string>(m_width));
 
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {
-            size_t index = static_cast<size_t>(y) * m_width + x;
-
-            const Pixel& pixel = m_pixels[index];
+            const Pixel& pixel = m_pixels[static_cast<size_t>(y) * m_width + x];
             // Invert for light-on-dark terminals, then blend transparent pixels toward
             // the lightest glyph (blank) so they stay empty in both modes.
             double v = m_invert ? 255.0 - pixel.r : pixel.r;
             double alpha = pixel.a / 255.0;
             v = alpha * v + (1.0 - alpha) * 255.0;
-            ascii_art += mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
+            grid[y][x] = mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
         }
-        ascii_art += '\n';
     }
 
-    return ascii_art;
+    return grid;
 }
 
-
-std::string ImageConverter::convert() {
+AsciiGrid ImageConverter::convertToGrid() {
     if (!loadAndGrayscale()) {
         throw std::runtime_error("Failed to load or process image data.");
     }
@@ -233,5 +228,14 @@ std::string ImageConverter::convert() {
     adjustPixelIntensity();
 
     std::cerr << "[INFO] Conversion steps completed. Generating final ASCII art...\n";
-    return generateAsciiArt();
+    return generateGrid();
+}
+
+std::string ImageConverter::convert() {
+    std::string ascii_art;
+    for (const auto& row : convertToGrid()) {
+        for (const auto& glyph : row) ascii_art += glyph;
+        ascii_art += '\n';
+    }
+    return ascii_art;
 }

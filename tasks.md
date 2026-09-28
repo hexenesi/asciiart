@@ -17,9 +17,9 @@ See [plan.md](plan.md) for the design. One commit per numbered group.
 
 ## 2. Grid output
 
-- [ ] Add `convertToGrid()` returning `std::vector<std::vector<std::string>>` (rows of glyphs)
-- [ ] Reimplement `convert()` on top of `convertToGrid()`
-- [ ] Tests: grid dimensions match string output; console output byte-identical
+- [x] Add `convertToGrid()` returning `std::vector<std::vector<std::string>>` (rows of glyphs)
+- [x] Reimplement `convert()` on top of `convertToGrid()`
+- [x] Tests: grid dimensions match string output; console output byte-identical
 
 ## 3. Scale mode
 

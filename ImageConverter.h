@@ -10,6 +10,9 @@ struct Pixel {
     unsigned char r, g, b, a; // After loading: r = g = b = grayscale intensity, a = alpha
 };
 
+/** Rows of glyphs; each glyph is a string so multi-byte UTF-8 characters fit in one cell. */
+using AsciiGrid = std::vector<std::vector<std::string>>;
+
 /**
  * @brief Manages the entire process of converting an image to ASCII art.
  */
@@ -23,6 +26,12 @@ public:
      * @return The generated ASCII art as a single string.
      */
     std::string convert();
+
+    /**
+     * @brief Runs the same conversion as convert() but returns one glyph per cell.
+     * @throws std::runtime_error if the image cannot be loaded.
+     */
+    AsciiGrid convertToGrid();
 
     // --- Configuration Getters/Setters ---
 
@@ -120,8 +129,8 @@ private:
      */
     const std::string& mapIntensityToChar(unsigned char intensity) const;
 
-    /** Generates the final ASCII art string from the processed pixel grid. */
-    std::string generateAsciiArt();
+    /** Maps the processed pixel buffer to glyphs. */
+    AsciiGrid generateGrid() const;
 };
 
 #endif // IMAGE_CONVERTER_H

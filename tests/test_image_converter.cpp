@@ -244,6 +244,30 @@ void testBrightnessAndContrast() {
     CHECK(!c.setContrast(-0.1));
 }
 
+void testGridMatchesString() {
+    auto path = writePng("gradient", 64, 32, [](int x, int) {
+        auto v = static_cast<unsigned char>(x * 4);
+        return Rgba{v, v, v, 255};
+    });
+    auto configure = [](ImageConverter& c) {
+        c.setWidth(20);
+        c.setCharset("blocks");
+    };
+    ImageConverter gridConverter(path);
+    configure(gridConverter);
+    AsciiGrid grid = gridConverter.convertToGrid();
+
+    auto rows = lines(convert(path, configure));
+    CHECK(grid.size() == rows.size());
+    std::string joined;
+    for (const auto& row : grid) {
+        CHECK(row.size() == 20u);
+        for (const auto& glyph : row) joined += glyph;
+        joined += '\n';
+    }
+    CHECK(joined == convert(path, configure));
+}
+
 void testConvertIsRepeatable() {
     ImageConverter c(solid("repeat", 300, 150, 128));
     auto first = c.convert();
@@ -264,6 +288,7 @@ int main() {
     testInvert();
     testTransparentIsBlank();
     testBrightnessAndContrast();
+    testGridMatchesString();
     testConvertIsRepeatable();
 
     if (g_failures) {
