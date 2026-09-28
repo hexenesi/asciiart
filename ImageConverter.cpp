@@ -90,10 +90,11 @@ void ImageConverter::applyAspectRatioCorrection() {
     bool height_set = (m_height != 0);
 
     if (!width_set && !height_set) {
-        // Case A: Nothing set. Default to source width, adjusting height for character aspect ratio.
+        // Case A: Nothing set. Default to source width capped at 100 columns, adjusting height for character aspect ratio.
         std::cerr << "[INFO] No dimensions set. Calculating target dimensions based on optimal scaling." << std::endl;
-        m_width = m_source_width;
-        m_height = static_cast<int>(std::round(static_cast<double>(m_source_height) / CHARACTER_ASPECT_RATIO));
+        const int DEFAULT_MAX_WIDTH = 100;
+        m_width = std::min(m_source_width, DEFAULT_MAX_WIDTH);
+        m_height = static_cast<int>(std::round(static_cast<double>(m_width) / (source_aspect_ratio * CHARACTER_ASPECT_RATIO)));
         if (m_height == 0) m_height = 1;
         std::cerr << "[INFO] Using source width and adjusted height: " << m_width << "x" << m_height << std::endl;
 
