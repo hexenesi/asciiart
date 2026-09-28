@@ -1,6 +1,6 @@
 # ASCII Image Converter
 
-Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.) en arte ASCII. El programa carga una imagen, la convierte a escala de grises y genera una representación utilizando un conjunto configurable de caracteres ASCII.
+Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.) en arte ASCII. El programa carga una imagen, la convierte a escala de grises y genera una representación utilizando un conjunto de caracteres seleccionable.
 
 ## Características
 
@@ -16,6 +16,7 @@ Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.)
   * Brillo.
   * Contraste.
 * Salida por consola o archivo de texto.
+* Varios conjuntos de caracteres predefinidos (`--charset`).
 * Código portable y escrito en C++ moderno.
 
 ## Funcionamiento
@@ -24,9 +25,9 @@ El proceso de conversión consta de los siguientes pasos:
 
 1. Cargar la imagen desde disco.
 2. Convertir la imagen a escala de grises.
-3. Ajustar el brillo y el contraste.
-4. Corregir la relación de aspecto para compensar las proporciones de los caracteres de una fuente monoespaciada.
-5. Redimensionar la imagen a las dimensiones solicitadas.
+3. Corregir la relación de aspecto para compensar las proporciones de los caracteres de una fuente monoespaciada.
+4. Redimensionar la imagen a las dimensiones solicitadas.
+5. Ajustar el brillo y el contraste.
 6. Convertir cada píxel a un carácter ASCII según su intensidad.
 7. Generar el resultado como texto.
 
@@ -37,13 +38,13 @@ Imagen
 Escala de grises
    │
    ▼
-Brillo / Contraste
-   │
-   ▼
 Corrección de aspecto
    │
    ▼
 Redimensionado
+   │
+   ▼
+Brillo / Contraste
    │
    ▼
 Mapeo de intensidad
@@ -60,17 +61,24 @@ Para evitar esta distorsión, el programa aplica un **factor de corrección de a
 
 Por ejemplo, si los caracteres tienen aproximadamente una relación de aspecto de **1:2** (ancho:alto), una imagen de **200×200 píxeles** podría convertirse internamente a **200×100** antes del mapeo ASCII, produciendo una representación visual mucho más fiel al original.
 
-El factor de corrección será configurable para adaptarse a diferentes fuentes monoespaciadas y terminales, permitiendo obtener resultados consistentes independientemente del entorno de visualización.
+Actualmente el factor es fijo en **2.0** (caracteres el doble de altos que anchos).
+
+Dimensiones de salida:
+
+* Sin `--width` ni `--height`: ancho igual al de la imagen, con un máximo de **100 columnas**; el alto se calcula a partir de la relación de aspecto.
+* Solo `--width`: el alto se calcula automáticamente.
+* Solo `--height`: el ancho se calcula automáticamente.
+* Ambos: se respetan tal cual (se muestra un aviso si deforman la imagen).
 
 ## Tabla de caracteres
 
-Por defecto se utiliza una secuencia ordenada desde los caracteres más oscuros hasta los más claros:
+Por defecto (`--charset standard`) se utiliza una secuencia ordenada desde los caracteres más oscuros hasta los más claros:
 
 ```text
 @%#*+=-:. 
 ```
 
-También pueden utilizarse conjuntos más largos, por ejemplo:
+Con `--charset detailed` se utiliza un conjunto más largo:
 
 ```text
 $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,"^`'.
@@ -95,6 +103,7 @@ ascii_converter foto.png \
     --width 160 \
     --height 80 \
     --brightness 15 \
+    --charset detailed \
     --contrast 1.2 \
     --output resultado.txt
 ```
@@ -147,11 +156,7 @@ Los píxeles oscuros producen caracteres más densos, mientras que los claros ge
 
 El proyecto puede compilar utilizando cualquier compilador compatible con **C++17** o superior.
 
-Para cargar imágenes puede utilizarse cualquiera de las siguientes bibliotecas:
-
-* stb_image (recomendada)
-* OpenCV
-* FreeImage
+Para cargar imágenes se utiliza [stb_image](https://github.com/nothings/stb), incluida en `include/` (no requiere instalación).
 
 ## Compilación
 
@@ -166,11 +171,35 @@ cmake --build .
 
 ## Ejemplo de salida
 
+Un círculo con degradado radial (oscuro en el centro), con `--width 40`:
+
 ```text
-@@@@@@@@@@@@%%%###***++===---::..
-@@@@@@@%%%###***+++===---:::....
-@@@%%%###***+++===---:::.....
-%%###***+++===---:::.......
+
+
+                  ....
+            .....::::::.....
+          ...:::--------::::..
+        ..:::---========---:::..
+       ..::--===++++++++===--::...
+      ..::--==++********++===--:..
+     ..::--==++**######***++=--::..
+     ..::-==++**##%%%%%#**++==--:..
+     ..::-==++**##%%%%%#**++==--:..
+     ..::--==++**######***++=--::..
+      ..::--==++********++===--:..
+       ..::--===++++++++===--::...
+        ..:::---========---:::..
+          ...:::--------::::..
+            .....::::::.....
+                  ....
+
+
+```
+
+Los mensajes de progreso se escriben en `stderr`; `stdout` contiene solo el arte ASCII, por lo que puede redirigirse:
+
+```bash
+ascii_converter foto.png > arte.txt
 ```
 
 ## Posibles mejoras
@@ -181,8 +210,9 @@ cmake --build .
 * Generación de animaciones ASCII.
 * Conversión de GIF y video.
 * Procesamiento en paralelo para imágenes grandes.
-* Paletas de caracteres personalizadas.
-* Corrección automática de la relación de aspecto de los caracteres.
+* Paletas de caracteres definidas por el usuario (además de los presets).
+* Factor de corrección de aspecto configurable.
+* Opción para invertir la escala (terminales con fondo oscuro).
 
 ## Licencia
 
