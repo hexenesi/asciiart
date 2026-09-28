@@ -38,11 +38,25 @@ public:
     /** Sets the desired output height for the ASCII grid. */
     void setHeight(int h) { m_height = h; }
 
-    /** Sets the brightness factor (0.0 to 2.0, 1.0 = neutral). */
-    void setBrightness(double b) { m_brightness = std::max(0.0, std::min(2.0, b)); }
+    /**
+     * @brief Sets the brightness offset in percent of the full range (-100 to 100, 0 = unchanged).
+     * @return false if out of range; the current value is kept.
+     */
+    bool setBrightness(double b) {
+        if (!(b >= -100.0 && b <= 100.0)) return false;
+        m_brightness = b;
+        return true;
+    }
 
-    /** Sets the contrast adjustment factor (> 1.0 for contrast increase). */
-    void setContrast(double c) { m_contrast = std::max(0.5, c); }
+    /**
+     * @brief Sets the contrast factor (>= 0; 1 = unchanged, 0 = flat gray, > 1 = more contrast).
+     * @return false if negative; the current value is kept.
+     */
+    bool setContrast(double c) {
+        if (!(c >= 0.0 && std::isfinite(c))) return false;
+        m_contrast = c;
+        return true;
+    }
 
     /**
      * @brief Sets the output file path. If empty, output will be printed to console.
@@ -72,7 +86,7 @@ private:
     std::string m_output_path;
     int m_width{0}; // Target width, 0 means auto/default
     int m_height{0}; // Target height, 0 means auto/default
-    double m_brightness{1.0}; // 1.0 = neutral
+    double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.
     std::vector<std::string> m_charset;

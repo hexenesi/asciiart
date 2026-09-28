@@ -105,8 +105,8 @@ ascii_converter foto.png \
 | -------------- | ------------------------ | ----------------- |
 | `--width`      | Ancho del ASCII generado | Automático        |
 | `--height`     | Alto del ASCII generado  | Automático        |
-| `--brightness` | Ajuste de brillo         | 0                 |
-| `--contrast`   | Ajuste de contraste      | 1.0               |
+| `--brightness` | Desplazamiento de brillo en % (-100 a 100; 0 = sin cambio) | 0 |
+| `--contrast`   | Factor de contraste (≥ 0; 1 = sin cambio, 0 = gris plano) | 1.0 |
 | `--output`     | Archivo de salida        | Consola           |
 | `--charset`    | Conjunto de caracteres   | `standard`        |
 

@@ -11,6 +11,18 @@
 // Local header includes (assuming compiler finds them)
 #include "ImageConverter.h"
 
+/** Parses a whole argument as a number; exits with an error on invalid input. */
+double parse_number(const std::string& option, const char* value) {
+    try {
+        size_t consumed = 0;
+        double result = std::stod(value, &consumed);
+        if (consumed == std::string(value).size()) return result;
+    } catch (...) {
+    }
+    std::cerr << "Error: " << option << " requires a numeric value, got '" << value << "'.\n";
+    std::exit(EXIT_FAILURE);
+}
+
 /**
  * @brief Parses command-line arguments according to the README specification.
  *
@@ -27,7 +39,7 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
     // Default values initialization (matching README table defaults where applicable)
     out_w = 0; // Auto-detect
     out_h = 0; // Auto-detect
-    out_b = 1.0;
+    out_b = 0.0;
     out_c = 1.0;
     out_p = ""; // Output to console by default
     out_cs = ImageConverter::charsetNames().front();
@@ -49,17 +61,9 @@ std::string parse_args(int argc, char* argv[], int& out_w, int& out_h, double& o
                 std::cerr << "Error: --height requires an integer value.\n";
             }
         } else if (arg == "--brightness" && i + 1 < argc) {
-            try {
-                out_b = std::stod(argv[++i]);
-            } catch (...) {
-                std::cerr << "Error: --brightness requires a floating point value.\n";
-            }
+            out_b = parse_number(arg, argv[++i]);
         } else if (arg == "--contrast" && i + 1 < argc) {
-            try {
-                out_c = std::stod(argv[++i]);
-            } catch (...) {
-                std::cerr << "Error: --contrast requires a floating point value.\n";
-            }
+            out_c = parse_number(arg, argv[++i]);
         } else if (arg == "--charset" && i + 1 < argc) {
             out_cs = argv[++i];
         } else if (arg == "--output" && i + 1 < argc) {
@@ -80,7 +84,7 @@ int main(int argc, char* argv[]) {
     // --- 1. Parse Arguments ---
     int width = 0;
     int height = 0;
-    double brightness = 1.0;
+    double brightness = 0.0;
     double contrast = 1.0;
     std::string output_path = "";
     std::string charset;
@@ -107,8 +111,14 @@ int main(int argc, char* argv[]) {
     // Apply user-specified parameters (assuming setters now exist)
     converter.setWidth(width);
     converter.setHeight(height);
-    converter.setBrightness(brightness);
-    converter.setContrast(contrast);
+    if (!converter.setBrightness(brightness)) {
+        std::cerr << "Error: --brightness must be between -100 and 100.\n";
+        return EXIT_FAILURE;
+    }
+    if (!converter.setContrast(contrast)) {
+        std::cerr << "Error: --contrast must be 0 or greater.\n";
+        return EXIT_FAILURE;
+    }
     converter.setOutputPath(output_path);
     if (!converter.setCharset(charset)) {
         std::cerr << "Error: unknown charset '" << charset << "'. Available:";

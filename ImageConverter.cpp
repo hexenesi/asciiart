@@ -9,7 +9,7 @@
 // --- Constructor and Setup ---
 
 ImageConverter::ImageConverter(const std::string& image_path) 
-    : m_image_path(image_path), m_width(0), m_height(0), m_brightness(1.0), m_contrast(1.0) {
+    : m_image_path(image_path), m_width(0), m_height(0), m_brightness(0.0), m_contrast(1.0) {
     // Initialize state variables here based on the path provided during construction.
 }
 
@@ -179,41 +179,18 @@ bool ImageConverter::resizePixels() {
 }
 
 bool ImageConverter::adjustPixelIntensity() {
-    // ===============================================================
-    // !!! PLACEHOLDER START: BRIGHTNESS & CONTRAST ADJUSTMENT !!!
-    // This must operate on the grayscale intensity value (which we extract from one channel, e.g., R).
-    // Formula for adjusting a normalized value 'V' based on Brightness 'B' and Contrast 'C':
-    // V_new = C * (V - 0.5) + B*0.5  (assuming initial grayscale is mapped to [0, 1])
-    // Then clamp result back into the valid byte range [0, 255].
-    // This operation must be performed on every pixel in m_pixels.
-    // ===============================================================
+    // On normalized intensity v in [0, 1]:
+    //   v' = C * (v - 0.5) + 0.5 + B / 100
+    // Contrast C scales the deviation from mid-gray; brightness B shifts by a percent of the range.
+    std::cerr << "[INFO] Applying Brightness (" << m_brightness << "%) and Contrast (" << m_contrast << ").\n";
 
-    std::cerr << "[INFO] Applying Brightness (" << m_brightness << ") and Contrast (" << m_contrast << ").\n";
-    
-
-    for (size_t i = 0; i < m_pixels.size(); ++i) {
-        // Since all channels R, G, B were set to the same intensity in loadAndGrayscale,
-        // we can take any channel, e.g., Red component (R).
-        unsigned char original_intensity = m_pixels[i].r;
-
-        // 1. Normalize V from [0, 255] byte range to [0.0, 1.0] float range.
-        double v_norm = static_cast<double>(original_intensity) / 255.0;
-
-        // 2. Apply transformation: V_new_norm = C * (V - 0.5) + B*0.5
-        // Note: Since we are operating on normalized [0, 1] values relative to the center point (0.5),
-        // Contrast scales deviation from 0.5, and Brightness shifts the result.
-        double v_new_norm = m_contrast * (v_norm - 0.5) + (m_brightness * 0.5);
-
-        // 3. Clamp V_new_norm back into [0.0, 1.0] range for safety.
-        v_new_norm = std::max(0.0, std::min(1.0, v_new_norm));
-
-        // 4. Scale result back to byte range [0, 255].
-        unsigned char new_intensity = static_cast<unsigned char>(std::round(v_new_norm * 255.0));
-
-        // Update all components since they represent the same intensity value in this grayscale model.
-        m_pixels[i].r = new_intensity;
-        m_pixels[i].g = new_intensity;
-        m_pixels[i].b = new_intensity;
+    const double shift = m_brightness / 100.0;
+    for (Pixel& pixel : m_pixels) {
+        // Grayscale: R, G and B hold the same intensity.
+        double v = pixel.r / 255.0;
+        double v_new = std::clamp(m_contrast * (v - 0.5) + 0.5 + shift, 0.0, 1.0);
+        unsigned char intensity = static_cast<unsigned char>(std::round(v_new * 255.0));
+        pixel.r = pixel.g = pixel.b = intensity;
     }
     std::cerr << "[SUCCESS] Pixel intensities adjusted for Brightness/Contrast.\n";
     return true;
