@@ -146,12 +146,12 @@ bool ImageConverter::resizePixels() {
         for (int x_target = 0; x_target < m_width; ++x_target) {
             // Map target coordinates back to source coordinates (Nearest Neighbor)
             // Source indices must be cast carefully as the math requires doubles for ratios.
-            double src_x_ratio = static_cast<double>(x_target) / static_cast<double>(m_width - 1) * (m_source_width - 1);
-            double src_y_ratio = static_cast<double>(y_target) / static_cast<double>(m_height - 1) * (m_source_height - 1);
+            // Sample at target pixel centers; safe for 1-pixel dimensions (no division by n-1).
+            double src_x_ratio = (x_target + 0.5) * m_source_width / m_width;
+            double src_y_ratio = (y_target + 0.5) * m_source_height / m_height;
 
-            // Nearest integer source coordinates
-            int src_x = static_cast<int>(std::round(src_x_ratio));
-            int src_y = static_cast<int>(std::round(src_y_ratio));
+            int src_x = std::min(static_cast<int>(src_x_ratio), m_source_width - 1);
+            int src_y = std::min(static_cast<int>(src_y_ratio), m_source_height - 1);
 
             // !!! CRITICAL BOUNDARY CHECK ADDED HERE TO PREVENT ASSERTION FAILURE !!!
             if (src_x < 0 || src_x >= m_source_width || src_y < 0 || src_y >= m_source_height) {
