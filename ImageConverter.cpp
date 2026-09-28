@@ -140,7 +140,7 @@ bool ImageConverter::resizePixels() {
 
     // Nearest Neighbor Interpolation Logic: Map each pixel (x', y') in the target grid 
     // back to the nearest source coordinate (x, y).
-    m_pixels.resize(final_size);
+    std::vector<Pixel> resized(final_size);
 
     for (int y_target = 0; y_target < m_height; ++y_target) {
         for (int x_target = 0; x_target < m_width; ++x_target) {
@@ -158,7 +158,7 @@ bool ImageConverter::resizePixels() {
                 std::cerr << "[CRITICAL] Source coordinate (" << src_x << ", " << src_y 
                           << ") is out of bounds [0," << m_source_width-1 << "," << m_source_height-1 << "]. Skipping pixel." << std::endl;
                 // Set the destination pixel to black/default if source data is invalid
-                m_pixels[y_target * m_width + x_target] = {0, 0, 0, 255};
+                resized[y_target * m_width + x_target] = {0, 0, 0, 255};
                 continue; 
             }
             // Calculate the linear index for the source pixel (in the original m_pixels buffer)
@@ -168,9 +168,10 @@ bool ImageConverter::resizePixels() {
             size_t target_index = y_target * m_width + x_target;
 
             // Copy the intensity data from the source pixel to the target pixel
-            m_pixels[target_index] = m_pixels[source_index]; 
+            resized[target_index] = m_pixels[source_index];
         }
     }
+    m_pixels = std::move(resized);
     std::cout << "[SUCCESS] Pixel data resized via Nearest Neighbor Interpolation to " << m_width << "x" << m_height << "." << std::endl;
     return true;
 }
