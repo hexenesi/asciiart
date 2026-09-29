@@ -1,7 +1,8 @@
-// Unit tests for GridRenderer implementations (ANSI; HTML and SVG later).
+// Unit tests for GridRenderer implementations (text, ANSI, HTML, SVG).
 
 #include "AnsiRenderer.h"
 #include "HtmlRenderer.h"
+#include "SvgRenderer.h"
 #include "TextRenderer.h"
 
 #include <iostream>
@@ -155,6 +156,61 @@ void testHtmlRepeatedColorsShareClass() {
     CHECK(contains(out, "<span class=\"c0\">\xE2\x96\x88</span>"));
 }
 
+void testSvgPlain() {
+    // Two rows of 4 cells; blanks split segments and are never drawn.
+    AsciiGrid grid = {{AsciiCell("<"), AsciiCell("&"), AsciiCell(" "), AsciiCell("@")},
+                      {AsciiCell(" "), AsciiCell(" "), AsciiCell(" "), AsciiCell(" ")}};
+    SvgOptions options;
+    options.title = "a&b";
+    std::string out = render(SvgRenderer(options), grid);
+    CHECK(out.rfind("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg ", 0) == 0);
+    CHECK(contains(out, "viewBox=\"0 0 24 24\"")); // 4 x 6 wide, 2 x 12 tall (aspect 2)
+    CHECK(contains(out, "<title>a&amp;b</title>"));
+    CHECK(contains(out, "<text y=\"9.6\">"
+                        "<tspan x=\"0\" textLength=\"12\" lengthAdjust=\"spacingAndGlyphs\">&lt;&amp;</tspan>"
+                        "<tspan x=\"18\" textLength=\"6\" lengthAdjust=\"spacingAndGlyphs\">@</tspan></text>"));
+    CHECK(countOf(out, "<text ") == 1u); // blank row skipped
+    CHECK(!contains(out, "class=\"c"));
+    CHECK(contains(out, "</svg>\n"));
+}
+
+void testSvgForeground() {
+    SvgOptions options;
+    options.color = true;
+    std::string out = render(SvgRenderer(options), sampleGrid());
+    // Red kept, yellow darkened; the blank between them is not drawn; ':' stays black.
+    CHECK(contains(out, ".c0 { fill: #ff0000; }"));
+    CHECK(contains(out, ".c1 { fill: #7c7c00; }"));
+    CHECK(contains(out, "<tspan x=\"0\" textLength=\"12\" lengthAdjust=\"spacingAndGlyphs\" class=\"c0\">@%</tspan>"
+                        "<tspan x=\"18\" textLength=\"6\" lengthAdjust=\"spacingAndGlyphs\" class=\"c1\">.</tspan>"));
+    CHECK(contains(out, "lengthAdjust=\"spacingAndGlyphs\">:</tspan>"));
+    CHECK(!contains(out, "<rect class"));
+}
+
+void testSvgBackground() {
+    SvgOptions options;
+    options.color = true;
+    options.style = ColorStyle::Background;
+    options.char_aspect = 1.5; // cells 6 x 9
+    AsciiGrid grid = {{colored(" ", kYellow), colored(" ", kYellow), colored("@", kRed)}};
+    std::string out = render(SvgRenderer(options), grid);
+    // Rectangles per color run (never darkened); white text only on the dark red cell.
+    CHECK(contains(out, "<rect class=\"c0\" x=\"0\" y=\"0\" width=\"12\" height=\"9\"/>"));
+    CHECK(contains(out, "<rect class=\"c1\" x=\"12\" y=\"0\" width=\"6\" height=\"9\"/>"));
+    CHECK(contains(out, ".c0 { fill: #ffff00; }") && contains(out, ".c1 { fill: #ff0000; }"));
+    CHECK(contains(out, ".c2 { fill: #ffffff; }"));
+    CHECK(contains(out, "x=\"12\" textLength=\"6\" lengthAdjust=\"spacingAndGlyphs\" class=\"c2\">@</tspan>"));
+    CHECK(contains(out, "<text y=\"7.2\">"));
+}
+
+void testSvgUtf8Glyphs() {
+    SvgOptions options;
+    options.color = true;
+    AsciiGrid grid = {{colored("\xE2\x96\x88", kRed), colored("\xE2\x96\x93", kRed)}};
+    std::string out = render(SvgRenderer(options), grid);
+    CHECK(contains(out, "textLength=\"12\" lengthAdjust=\"spacingAndGlyphs\" class=\"c0\">\xE2\x96\x88\xE2\x96\x93</tspan>"));
+}
+
 } // namespace
 
 int main() {
@@ -168,6 +224,10 @@ int main() {
     testHtmlForeground();
     testHtmlBackground();
     testHtmlRepeatedColorsShareClass();
+    testSvgPlain();
+    testSvgForeground();
+    testSvgBackground();
+    testSvgUtf8Glyphs();
 
     if (g_failures) {
         std::cerr << g_failures << " check(s) failed\n";

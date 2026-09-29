@@ -13,6 +13,7 @@
 #include "PageLayout.h"
 #include "PdfWriter.h"
 #include "PosterRenderer.h"
+#include "SvgRenderer.h"
 #include "TextRenderer.h"
 
 struct Options {
@@ -25,6 +26,7 @@ struct Options {
     std::string charset = ImageConverter::charsetNames().front();
     std::string output_path; // empty = stdout
     std::string html_path;   // empty = no HTML
+    std::string svg_path;    // empty = no SVG
     bool invert = false;
 
     // Color
@@ -65,8 +67,9 @@ void print_usage(std::ostream& out) {
            "\n"
            "Other formats (with --color, colored; pale colors are darkened for a white page):\n"
            "  --html <file>       Write a self-contained HTML page\n"
+           "  --svg <file>        Write an SVG image\n"
            "\n"
-           "Art goes to stdout only when no --pdf or --html file is written.\n"
+           "Art goes to stdout only when no --pdf, --html or --svg file is written.\n"
            "\n"
            "Printable PDF (tiled pages with overview and neighbour numbers):\n"
            "  --pdf <file>        Write a PDF poster\n"
@@ -127,7 +130,7 @@ Options parse_args(int argc, char* argv[]) {
     const std::vector<std::string> value_options = {
         "--width", "--height",      "--scale",     "--brightness", "--contrast", "--charset",  "--output",
         "--pdf",   "--orientation", "--font-size", "--pages-wide", "--overlap",  "--max-pages", "--paper",
-        "--glue-flap", "--color-style", "--colors", "--html"};
+        "--glue-flap", "--color-style", "--colors", "--html", "--svg"};
     const std::vector<std::string> page_options = {"--paper",     "--orientation", "--font-size",
                                                    "--pages-wide", "--overlap",   "--max-pages",
                                                    "--dry-run",    "--glue-flap"};
@@ -172,6 +175,8 @@ Options parse_args(int argc, char* argv[]) {
                 opts.pdf_path = value;
             } else if (arg == "--html") {
                 opts.html_path = value;
+            } else if (arg == "--svg") {
+                opts.svg_path = value;
             } else if (arg == "--paper") {
                 if (value == "letter") opts.page.paper = Paper::Letter;
                 else if (value == "a4") opts.page.paper = Paper::A4;
@@ -250,7 +255,7 @@ bool renderToFile(const std::string& path, const GridRenderer& renderer, const A
     return static_cast<bool>(file);
 }
 
-/** Writes the --output text copy and the --html page, if requested. Returns false on a write error. */
+/** Writes the --output text copy and the --html/--svg files, if requested. Returns false on a write error. */
 bool writeSideOutputs(const Options& opts, const AsciiGrid& grid, double char_aspect) {
     bool ok = true;
     if (!opts.output_path.empty()) {
@@ -271,6 +276,19 @@ bool writeSideOutputs(const Options& opts, const AsciiGrid& grid, double char_as
             std::cerr << "[SUCCESS] Saved HTML to: " << opts.html_path << "\n";
         } else {
             std::cerr << "[ERROR] Could not open file for writing: " << opts.html_path << "\n";
+            ok = false;
+        }
+    }
+    if (!opts.svg_path.empty()) {
+        SvgOptions svg;
+        svg.color = opts.color;
+        svg.style = opts.color_style;
+        svg.char_aspect = char_aspect;
+        svg.title = baseName(opts.image_path);
+        if (renderToFile(opts.svg_path, SvgRenderer(svg), grid)) {
+            std::cerr << "[SUCCESS] Saved SVG to: " << opts.svg_path << "\n";
+        } else {
+            std::cerr << "[ERROR] Could not open file for writing: " << opts.svg_path << "\n";
             ok = false;
         }
     }
@@ -369,7 +387,7 @@ int main(int argc, char* argv[]) {
         }
 
         const double console_aspect = 2.0; // ImageConverter default
-        if (!opts.html_path.empty()) {
+        if (!opts.html_path.empty() || !opts.svg_path.empty()) {
             if (!writeSideOutputs(opts, grid, console_aspect)) return EXIT_FAILURE;
         } else if (!opts.output_path.empty()) {
             if (!writeSideOutputs(opts, grid, console_aspect)) {

@@ -65,11 +65,11 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 8. SVG
 
-- [ ] 8.1 `SvgRenderer`: `<text>` per row, `<tspan>` per run with explicit `x`
-- [ ] 8.2 `bg` mode: `<rect>` per run
-- [ ] 8.3 `viewBox` in cell units; XML escaping
-- [ ] 8.4 CLI: `--svg <file>`
-- [ ] 8.5 Tests: structure, x positions, colors; CLI writes file
+- [x] 8.1 `SvgRenderer`: `<text>` per row, `<tspan>` per run with explicit `x`
+- [x] 8.2 `bg` mode: `<rect>` per run
+- [x] 8.3 `viewBox` in cell units; XML escaping
+- [x] 8.4 CLI: `--svg <file>`
+- [x] 8.5 Tests: structure, x positions, colors; CLI writes file
 
 ## 9. Docs and verification
 

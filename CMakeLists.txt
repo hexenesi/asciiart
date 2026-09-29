@@ -28,6 +28,7 @@ add_library(asciiart_core STATIC
     src/PageLayout.cpp
     src/PdfWriter.cpp
     src/PosterRenderer.cpp
+    src/SvgRenderer.cpp
     src/TextRenderer.cpp
 )
 target_include_directories(asciiart_core
@@ -94,6 +95,12 @@ add_test(NAME html_plain COMMAND ascii_converter ${TEST_IMAGE} --html plain.html
 set_tests_properties(html_plain PROPERTIES PASS_REGULAR_EXPRESSION "Saved HTML to: plain.html")
 add_test(NAME html_color COMMAND ascii_converter ${TEST_IMAGE} --html color.html --color --width 30)
 set_tests_properties(html_color PROPERTIES PASS_REGULAR_EXPRESSION "Saved HTML to: color.html")
+
+# SVG output
+add_test(NAME svg_plain COMMAND ascii_converter ${TEST_IMAGE} --width 20 --svg plain.svg)
+set_tests_properties(svg_plain PROPERTIES PASS_REGULAR_EXPRESSION "Saved SVG to: plain.svg")
+add_test(NAME svg_color COMMAND ascii_converter ${TEST_IMAGE} --width 20 --color --color-style bg --svg color.svg)
+set_tests_properties(svg_color PROPERTIES PASS_REGULAR_EXPRESSION "Saved SVG to: color.svg")
 
 # Each case: name|expected error text|arguments
 foreach(case
