@@ -64,7 +64,7 @@ void HtmlRenderer::render(const AsciiGrid& grid, std::ostream& out) const {
         << "<title>" << escape(m_options.title) << "</title>\n<style>\n"
         << "body { margin: 0; background: #fff; }\n"
         << "pre.ascii { margin: 16px; color: #000; font-family: \"Courier New\", Courier, monospace;"
-        << " font-size: 10px; line-height: " << line_height << "; }\n";
+        << " font-size: 13px; line-height: " << line_height << "; }\n";
     for (size_t i = 0; i < classes.size(); ++i) {
         const Rgb& c = classes[i];
         out << ".c" << i << " { ";

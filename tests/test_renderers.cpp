@@ -113,6 +113,7 @@ void testHtmlPlain() {
     CHECK(contains(out, "<title>a &lt;b&gt;</title>"));
     CHECK(contains(out, "<pre class=\"ascii\">&lt;&amp;&gt;\n@\n</pre>"));
     CHECK(contains(out, "line-height: 1.2;")); // 2.0 aspect * 0.6 em
+    CHECK(contains(out, "font-size: 13px;"));
     CHECK(!contains(out, "<span"));
     CHECK(contains(out, "</html>\n"));
 }
