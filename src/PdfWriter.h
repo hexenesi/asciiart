@@ -9,10 +9,13 @@
  *
  * Coordinates are PDF points with the origin at the bottom-left of the page.
  * Text must be ASCII (the standard Courier font uses a single-byte encoding).
- * Streams are uncompressed.
+ * Content streams are Flate-compressed (miniz) when `compress` is true; uncompressed output
+ * is easier to inspect in tests and when debugging.
  */
 class PdfWriter {
 public:
+    explicit PdfWriter(bool compress = false) : m_compress(compress) {}
+
     /** 8-bit RGB fill color. */
     struct Color {
         unsigned char r = 0, g = 0, b = 0;
@@ -73,6 +76,7 @@ private:
         std::string content;
     };
     std::vector<PageData> m_pages;
+    bool m_compress = false;
 
     std::string& content();
 };

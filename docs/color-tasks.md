@@ -58,10 +58,10 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 7. PDF compression
 
-- [ ] 7.1 Vendor miniz in `third_party/miniz/` (license file included)
-- [ ] 7.2 `PdfWriter`: `/Filter /FlateDecode` on content streams; keep uncompressed option for tests/debugging
-- [ ] 7.3 Tests: stream round trip through miniz; `/Length` matches compressed bytes; readers open the file
-- [ ] 7.4 Measure size before/after on a large color poster
+- [x] 7.1 Vendor miniz in `third_party/miniz/` (license file included)
+- [x] 7.2 `PdfWriter`: `/Filter /FlateDecode` on content streams; keep uncompressed option for tests/debugging
+- [x] 7.3 Tests: stream round trip through miniz; `/Length` matches compressed bytes; readers open the file
+- [x] 7.4 Measure size before/after on a large color poster (photo, 2 pages wide: fg 1.31 MB -> 166 KB, bg 2.84 MB -> 374 KB; grayscale 1:1 878 KB -> 414 KB)
 
 ## 8. SVG
 

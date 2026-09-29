@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(ASCIIConverter LANGUAGES CXX)
+project(ASCIIConverter LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -12,6 +12,11 @@ if(MSVC)
 else()
     target_compile_options(project_warnings INTERFACE -Wall -Wextra)
 endif()
+
+# Vendored miniz (MIT) for PDF stream compression. Only the deflate/inflate core is used.
+add_library(miniz STATIC third_party/miniz/miniz.c)
+target_include_directories(miniz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/miniz)
+target_compile_definitions(miniz PUBLIC MINIZ_NO_ARCHIVE_APIS MINIZ_NO_STDIO MINIZ_NO_TIME)
 
 # Conversion, page layout and PDF code, shared by the CLI and the tests.
 # STB_IMAGE_IMPLEMENTATION is defined in src/ImageConverter.cpp only.
@@ -29,7 +34,7 @@ target_include_directories(asciiart_core
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
 )
-target_link_libraries(asciiart_core PRIVATE project_warnings)
+target_link_libraries(asciiart_core PRIVATE project_warnings miniz)
 
 add_executable(ascii_converter src/main.cpp)
 target_link_libraries(ascii_converter PRIVATE asciiart_core project_warnings)
@@ -45,6 +50,8 @@ endforeach()
 # Unit tests write their PNG fixtures to the working directory.
 add_test(NAME unit COMMAND test_image_converter WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME page_layout COMMAND test_page_layout)
+# The PDF writer test inflates compressed streams itself.
+target_link_libraries(test_pdf_writer PRIVATE miniz)
 add_test(NAME pdf_writer COMMAND test_pdf_writer)
 add_test(NAME poster_renderer COMMAND test_poster_renderer)
 add_test(NAME color_runs COMMAND test_color_runs)

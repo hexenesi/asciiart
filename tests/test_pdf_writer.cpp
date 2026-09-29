@@ -2,10 +2,13 @@
 
 #include "PdfWriter.h"
 
+#include "miniz.h"
+
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -21,6 +24,12 @@ int g_failures = 0;
 
 bool contains(const std::string& haystack, const std::string& needle) {
     return haystack.find(needle) != std::string::npos;
+}
+
+size_t countOf(const std::string& haystack, const std::string& needle) {
+    size_t count = 0;
+    for (size_t pos = 0; (pos = haystack.find(needle, pos)) != std::string::npos; pos += needle.size()) ++count;
+    return count;
 }
 
 // Checks every xref entry points at "<id> 0 obj" and startxref points at "xref".
@@ -140,6 +149,59 @@ void testColorOperations() {
     CHECK(xrefIsValid(out) && streamLengthsMatch(out));
 }
 
+// Draws the same content into a writer; used to compare compressed and plain output.
+void drawSample(PdfWriter& pdf) {
+    pdf.beginPage(612, 792);
+    std::vector<std::string> lines(100, "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ");
+    pdf.textLines(54, 700, 6, 6, lines);
+    pdf.coloredTextLines(54, 100, 6, 6, {{{"ab", {255, 0, 0}}, {"cd", {0, 0, 255}}}});
+    pdf.beginPage(612, 792);
+    pdf.text(10, 10, 8, "second");
+}
+
+// Returns the raw bytes of each stream, in order.
+std::vector<std::string> streams(const std::string& pdf) {
+    std::vector<std::string> out;
+    size_t pos = 0;
+    while ((pos = pdf.find("/Length ", pos)) != std::string::npos) {
+        size_t length = std::strtoul(pdf.c_str() + pos + 8, nullptr, 10);
+        size_t start = pdf.find("stream\n", pos) + 7;
+        out.push_back(pdf.substr(start, length));
+        pos = start + length;
+    }
+    return out;
+}
+
+std::string inflate(const std::string& data, size_t expected) {
+    std::string out(expected + 16, '\0');
+    mz_ulong size = static_cast<mz_ulong>(out.size());
+    if (mz_uncompress(reinterpret_cast<unsigned char*>(&out[0]), &size,
+                      reinterpret_cast<const unsigned char*>(data.data()), static_cast<mz_ulong>(data.size())) != MZ_OK) {
+        return "<inflate failed>";
+    }
+    out.resize(size);
+    return out;
+}
+
+void testCompression() {
+    PdfWriter plain, packed(/*compress=*/true);
+    drawSample(plain);
+    drawSample(packed);
+    std::string a = plain.finish(), b = packed.finish();
+
+    CHECK(!contains(a, "/FlateDecode"));
+    CHECK(countOf(b, "/Filter /FlateDecode") == 2u);
+    CHECK(b.size() < a.size() / 3); // repetitive art compresses well
+    CHECK(xrefIsValid(b));
+
+    auto raw = streams(a), zipped = streams(b);
+    CHECK(raw.size() == 2u && zipped.size() == 2u);
+    for (size_t i = 0; i < raw.size() && i < zipped.size(); ++i) {
+        CHECK(inflate(zipped[i], raw[i].size()) == raw[i]); // round trip
+        CHECK(zipped[i].size() < raw[i].size() || raw[i].size() < 64);
+    }
+}
+
 void testEmptyDocumentIsValid() {
     std::string out = PdfWriter().finish();
     CHECK(contains(out, "/Count 0"));
@@ -154,6 +216,7 @@ int main() {
     testDecimalFormatting();
     testDrawingWithoutPageThrows();
     testColorOperations();
+    testCompression();
     testEmptyDocumentIsValid();
 
     if (g_failures) {

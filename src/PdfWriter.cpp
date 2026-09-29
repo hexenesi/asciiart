@@ -1,6 +1,8 @@
 #include "PdfWriter.h"
 
 #include <cstdio>
+
+#include "miniz.h"
 #include <fstream>
 #include <stdexcept>
 
@@ -15,6 +17,18 @@ std::string num(double value) {
     if (s.back() == '.') s.pop_back();
     if (s == "-0") s = "0";
     return s;
+}
+
+// zlib-format (RFC 1950) deflate, as required by /FlateDecode.
+std::string deflate(const std::string& data) {
+    mz_ulong size = mz_compressBound(static_cast<mz_ulong>(data.size()));
+    std::string out(size, '\0');
+    int status = mz_compress2(reinterpret_cast<unsigned char*>(&out[0]), &size,
+                              reinterpret_cast<const unsigned char*>(data.data()),
+                              static_cast<mz_ulong>(data.size()), MZ_DEFAULT_LEVEL);
+    if (status != MZ_OK) throw std::runtime_error("PDF stream compression failed.");
+    out.resize(size);
+    return out;
 }
 
 } // namespace
@@ -132,8 +146,14 @@ std::string PdfWriter::finish() const {
                " 0 R >>\nendobj\n";
 
         beginObject(content_id);
-        out += "<< /Length " + std::to_string(page.content.size()) + " >>\nstream\n";
-        out += page.content;
+        if (m_compress) {
+            std::string packed = deflate(page.content);
+            out += "<< /Length " + std::to_string(packed.size()) + " /Filter /FlateDecode >>\nstream\n";
+            out += packed;
+        } else {
+            out += "<< /Length " + std::to_string(page.content.size()) + " >>\nstream\n";
+            out += page.content;
+        }
         out += "\nendstream\nendobj\n";
     }
 

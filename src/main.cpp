@@ -324,7 +324,7 @@ int runPdf(const Options& opts, ImageConverter& converter) {
     }
     if (opts.dry_run) return EXIT_SUCCESS;
 
-    PdfWriter pdf;
+    PdfWriter pdf(/*compress=*/true);
     PosterColor color;
     color.enabled = opts.color;
     color.style = opts.color_style;
