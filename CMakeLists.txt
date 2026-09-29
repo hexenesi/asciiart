@@ -16,6 +16,7 @@ endif()
 # Conversion, page layout and PDF code, shared by the CLI and the tests.
 # STB_IMAGE_IMPLEMENTATION is defined in src/ImageConverter.cpp only.
 add_library(asciiart_core STATIC
+    src/ColorRuns.cpp
     src/ImageConverter.cpp
     src/PageLayout.cpp
     src/PdfWriter.cpp
@@ -33,7 +34,7 @@ target_link_libraries(ascii_converter PRIVATE asciiart_core project_warnings)
 # --- Tests (run with: ctest --test-dir <build dir>) ---
 enable_testing()
 
-foreach(test_name test_image_converter test_page_layout test_pdf_writer test_poster_renderer)
+foreach(test_name test_image_converter test_page_layout test_pdf_writer test_poster_renderer test_color_runs)
     add_executable(${test_name} tests/${test_name}.cpp)
     target_link_libraries(${test_name} PRIVATE asciiart_core project_warnings)
 endforeach()
@@ -43,6 +44,7 @@ add_test(NAME unit COMMAND test_image_converter WORKING_DIRECTORY ${CMAKE_CURREN
 add_test(NAME page_layout COMMAND test_page_layout)
 add_test(NAME pdf_writer COMMAND test_pdf_writer)
 add_test(NAME poster_renderer COMMAND test_poster_renderer)
+add_test(NAME color_runs COMMAND test_color_runs)
 
 # CLI behavior
 add_test(NAME cli_help COMMAND ascii_converter --help)

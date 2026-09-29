@@ -328,6 +328,18 @@ void testColorSurvivesLoadAndResize() {
     AsciiGrid g = plain.convertToGrid();
     CHECK(g[0][0].glyph == "*");
     CHECK(g[0][7].glyph == "%");
+
+    // Quantization changes colors only
+    auto gray = writePng("gray", 2, 1, [](int, int) { return Rgba{250, 130, 5, 255}; });
+    ImageConverter q(gray);
+    q.setWidth(2);
+    q.setHeight(1);
+    std::string exact = q.convert();
+    CHECK(q.setColorLevels(32));
+    AsciiGrid qg = q.convertToGrid();
+    CHECK(qg[0][0].color == (Rgb{247, 132, 8}));
+    CHECK(q.convert() == exact);
+    CHECK(!q.setColorLevels(1) && !q.setColorLevels(257) && q.setColorLevels(0));
 }
 
 void testConvertIsRepeatable() {

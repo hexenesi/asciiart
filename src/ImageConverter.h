@@ -108,6 +108,17 @@ public:
         return true;
     }
 
+    /**
+     * @brief Rounds cell colors to `levels` values per channel (2..256; 0 or 256 = exact colors).
+     * Only affects AsciiCell::color, never the glyphs.
+     * @return false if out of range; the current value is kept.
+     */
+    bool setColorLevels(int levels) {
+        if (levels != 0 && (levels < 2 || levels > 256)) return false;
+        m_color_levels = levels;
+        return true;
+    }
+
     /** Maps dark pixels to light glyphs, for light-on-dark terminals. */
     void setInvert(bool invert) { m_invert = invert; }
 
@@ -125,6 +136,7 @@ private:
     double m_brightness{0.0}; // percent offset, 0 = unchanged
     double m_contrast{1.0};
     bool m_invert{false};
+    int m_color_levels{0};     // 0 = exact colors
     double m_scale{0.0};       // Chars per source pixel; 0 = use width/height
     double m_char_aspect{2.0}; // Monospace cells are about twice as tall as wide.
     // Glyphs ordered darkest to lightest; strings so multi-byte UTF-8 glyphs work.

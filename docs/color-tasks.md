@@ -21,9 +21,9 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 2. Quantization and runs
 
-- [ ] 2.1 `quantize(Rgb, levels)` applied when the grid is built (only with color on)
-- [ ] 2.2 Run splitter: row → list of (color, glyph string) runs
-- [ ] 2.3 Tests: rounding at 2, 32 and 256 levels; runs for uniform, alternating and mixed rows
+- [x] 2.1 `quantize(Rgb, levels)` applied when the grid is built (only with color on)
+- [x] 2.2 Run splitter: row → list of (color, glyph string) runs
+- [x] 2.3 Tests: rounding at 2, 32 and 256 levels; runs for uniform, alternating and mixed rows
 
 ## 3. Renderer interface
 

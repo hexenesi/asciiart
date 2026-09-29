@@ -1,5 +1,6 @@
 #include "ImageConverter.h"
 
+#include "ColorRuns.h"
 #include "Errors.h"
 
 #include <iostream>
@@ -221,7 +222,7 @@ AsciiGrid ImageConverter::generateGrid() const {
             v = alpha * v + (1.0 - alpha) * 255.0;
             AsciiCell& cell = grid[y][x];
             cell.glyph = mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
-            cell.color = pixel.color;
+            cell.color = (m_color_levels >= 2) ? quantize(pixel.color, m_color_levels) : pixel.color;
             cell.has_color = pixel.alpha != 0;
         }
     }
