@@ -73,5 +73,5 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 9. Docs and verification
 
-- [ ] 9.1 README: color options, styles, formats, file size notes
-- [ ] 9.2 Visual checks: terminal, browser (HTML, SVG), PDF viewer, one printed color page
+- [x] 9.1 README: color options, styles, formats, file size notes
+- [ ] 9.2 Visual checks: browser (HTML, SVG) and PDF viewer done (Chromium, mutool); terminal escape codes verified in tests. Pending: viewing in a real terminal and one printed color page (needs the user)

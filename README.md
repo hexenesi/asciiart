@@ -5,7 +5,7 @@ Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.)
 ## Características
 
 * Soporte para imágenes en formato **JPG** y **PNG**.
-* Conversión automática a **escala de grises**.
+* Conversión a **escala de grises** para elegir los caracteres; el color original se conserva para la salida en color.
 * Generación de arte ASCII utilizando una tabla de caracteres ordenados por densidad.
 * Tamaño de salida configurable:
 
@@ -16,6 +16,8 @@ Una herramienta escrita en **C++** para convertir imágenes (`JPG`, `PNG`, etc.)
   * Brillo.
   * Contraste.
 * Salida por consola o archivo de texto.
+* **Color** (`--color`): en la terminal (ANSI de 24 bits), en HTML, en SVG y en el póster PDF, con caracteres de color o fondo de color (mosaico).
+* Exportación a **HTML** (`--html`) y **SVG** (`--svg`).
 * **Póster imprimible en PDF**: la imagen se divide en páginas Carta o A4 numeradas, con los números de las páginas vecinas en los márgenes y una página de resumen con el mapa de ensamblado.
 * Varios conjuntos de caracteres predefinidos (`--charset`).
 * Código portable y escrito en C++ moderno.
@@ -175,6 +177,39 @@ Ensamblado: corte los bordes izquierdo y superior por las marcas de alineación,
 
 Para imprimir, use **tamaño real / 100 %** (sin "ajustar a la página"); si la impresora escala las hojas, las páginas vecinas no encajarán.
 
+### Color, HTML y SVG
+
+```bash
+# Color en la terminal (caracteres de color)
+ascii_converter foto.jpg --width 120 --color
+
+# Fondo de color (mosaico) con caracteres en blanco o negro
+ascii_converter foto.jpg --width 120 --color --color-style bg
+
+# Página HTML e imagen SVG en color
+ascii_converter foto.jpg --width 160 --color --html foto.html --svg foto.svg
+
+# Póster PDF en color
+ascii_converter foto.jpg --pdf poster.pdf --pages-wide 3 --color --color-style bg
+```
+
+| Opción          | Descripción | Valor por defecto |
+| --------------- | ----------- | ----------------- |
+| `--color`       | Usa los colores de la imagen | desactivado |
+| `--color-style` | `fg`: caracteres de color; `bg`: fondo de color con caracteres en blanco o negro (el que contraste más) | `fg` |
+| `--colors`      | Niveles por canal de color, de 2 a 256 (`256` = colores exactos). Menos niveles agrupan más celdas del mismo color y reducen el tamaño de los archivos | 32 |
+| `--html`        | Escribe una página HTML autocontenida | — |
+| `--svg`         | Escribe una imagen SVG | — |
+
+* **Terminal:** códigos ANSI de 24 bits (la mayoría de las terminales modernas los admiten). Con `--output` el archivo de texto nunca lleva códigos de color.
+* **Fondo blanco (HTML, SVG, PDF):** en el estilo `fg` los colores muy claros se oscurecen para que se vean sobre papel o fondo blanco; el tono se mantiene. En la terminal se usan los colores reales. En papel, el estilo `bg` da un resultado mucho más intenso que `fg`.
+* **HTML:** una clase CSS por color y un `<span>` por tramo de color. Admite todos los conjuntos de caracteres, incluido `blocks`.
+* **SVG:** una línea `<text>` por fila, con cada tramo colocado en su columna exacta, de modo que las columnas se alinean con cualquier fuente monoespaciada. En estilo `bg` se dibuja un `<rect>` por tramo de color.
+* **PDF:** las etiquetas, marcas y la página de resumen siempre se imprimen en negro. Los contenidos de las páginas se comprimen (Flate).
+* Cuando se escribe un archivo `--pdf`, `--html` o `--svg`, el arte no se imprime en `stdout`. Se pueden combinar varios formatos en una misma ejecución.
+
+Tamaños de referencia (foto de 962×1280, póster de 2 hojas de ancho, 280×224 caracteres): PDF en escala de grises 46 KB, color `fg` 166 KB, color `bg` 374 KB. A 100 columnas, el SVG en color ocupa unos 0.5 MB y el HTML unos 0.2 MB.
+
 ### Conjuntos de caracteres (`--charset`)
 
 | Nombre     | Caracteres (oscuro → claro)  |
@@ -214,7 +249,12 @@ Las zonas transparentes (PNG con canal alfa) se tratan como vacías y se represe
 
 El proyecto puede compilar utilizando cualquier compilador compatible con **C++17** o superior.
 
-Para cargar imágenes se utiliza [stb_image](https://github.com/nothings/stb), incluida en `third_party/stb/` (no requiere instalación).
+Bibliotecas incluidas en `third_party/` (no requieren instalación):
+
+* [stb_image](https://github.com/nothings/stb) (`third_party/stb/`): carga de imágenes.
+* [miniz](https://github.com/richgel999/miniz) 3.0.2 (`third_party/miniz/`, licencia MIT): compresión de los PDF.
+
+El proyecto se compila como C y C++ (miniz está escrita en C).
 
 ## Estructura del proyecto
 
@@ -224,11 +264,19 @@ src/                 Código fuente
   ImageConverter.*   Carga, escala de grises, redimensionado y conversión a caracteres
   PageLayout.*       División en páginas (papel, orientación, vecinas)
   PdfWriter.*        Escritor de PDF mínimo, sin dependencias
-  PosterRenderer.*   Contenido de las páginas del póster
+  PosterRenderer.*   Contenido de las páginas del póster (en color o no)
+  ColorRuns.*        Cuantización de colores y tramos de un mismo color
+  GridRenderer.h     Interfaz común de las salidas
+  TextRenderer.*     Texto plano
+  AnsiRenderer.*     Terminal en color (ANSI)
+  HtmlRenderer.*     Página HTML
+  SvgRenderer.*      Imagen SVG
+  Errors.h           Excepciones ImageLoadError y LayoutError
 tests/               Pruebas unitarias y de línea de comandos
   data/              Imagen de prueba
 third_party/stb/     stb_image.h
-docs/                Plan y lista de tareas de la salida PDF
+third_party/miniz/   miniz (compresión)
+docs/                Planes y listas de tareas (PDF y color)
 samples/             Imágenes y PDF locales (ignorado por git)
 ```
 
@@ -286,15 +334,12 @@ ascii_converter foto.png > arte.txt
 
 ## Posibles mejoras
 
-* Soporte para imágenes a color utilizando códigos ANSI.
-* Exportación a HTML.
-* Exportación a SVG.
+* SVG comprimido (`.svgz`) para reducir el tamaño de la salida en color.
 * Generación de animaciones ASCII.
 * Conversión de GIF y video.
 * Procesamiento en paralelo para imágenes grandes.
 * Paletas de caracteres definidas por el usuario (además de los presets).
 * Factor de corrección de aspecto configurable en la consola (en PDF ya se calcula a partir de la fuente).
-* Compresión de los PDF generados.
 
 ## Licencia
 
