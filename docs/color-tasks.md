@@ -33,11 +33,11 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 4. ANSI terminal
 
-- [ ] 4.1 `AnsiRenderer` for `fg` (`38;2`) and `bg` (`48;2`), one code per run, reset at line end
-- [ ] 4.2 CLI: `--color`, `--color-style`, `--colors`; stdout uses ANSI only with `--color`
-- [ ] 4.3 `--output` files never contain escape codes
-- [ ] 4.4 Errors: `--color-style`/`--colors` without `--color`; `--colors` outside 2–256
-- [ ] 4.5 Tests: escape sequences and resets; CLI errors
+- [x] 4.1 `AnsiRenderer` for `fg` (`38;2`) and `bg` (`48;2`), one code per run, reset at line end
+- [x] 4.2 CLI: `--color`, `--color-style`, `--colors`; stdout uses ANSI only with `--color`
+- [x] 4.3 `--output` files never contain escape codes
+- [x] 4.4 Errors: `--color-style`/`--colors` without `--color`; `--colors` outside 2–256
+- [x] 4.5 Tests: escape sequences and resets; CLI errors
 
 ## 5. HTML
 

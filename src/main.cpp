@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Errors.h"
+#include "AnsiRenderer.h"
 #include "ImageConverter.h"
 #include "PageLayout.h"
 #include "PdfWriter.h"
@@ -23,6 +24,12 @@ struct Options {
     std::string charset = ImageConverter::charsetNames().front();
     std::string output_path; // empty = stdout
     bool invert = false;
+
+    // Color
+    bool color = false;
+    ColorStyle color_style = ColorStyle::Foreground;
+    int color_levels = 32;
+    std::vector<std::string> color_options_used; // for "requires --color" errors
 
     // Printable PDF output
     std::string pdf_path; // empty = no PDF
@@ -46,8 +53,13 @@ void print_usage(std::ostream& out) {
     for (const auto& name : ImageConverter::charsetNames()) out << ' ' << name;
     out << " (default: " << ImageConverter::charsetNames().front() << ")\n"
            "  --invert            Invert intensities (for light text on dark background)\n"
-           "  --output <file>     Write text to file instead of stdout\n"
+           "  --output <file>     Write text to file instead of stdout (never colored)\n"
            "  -h, --help          Show this help\n"
+           "\n"
+           "Color (24-bit ANSI in the terminal):\n"
+           "  --color             Color the output with the image's colors\n"
+           "  --color-style <s>   fg (colored characters) or bg (colored background) (default: fg)\n"
+           "  --colors <n>        Levels per color channel, 2 to 256 (default: 32; 256 = exact)\n"
            "\n"
            "Printable PDF (tiled pages with overview and neighbour numbers):\n"
            "  --pdf <file>        Write a PDF poster (text is written only with --output)\n"
@@ -108,7 +120,7 @@ Options parse_args(int argc, char* argv[]) {
     const std::vector<std::string> value_options = {
         "--width", "--height",      "--scale",     "--brightness", "--contrast", "--charset",  "--output",
         "--pdf",   "--orientation", "--font-size", "--pages-wide", "--overlap",  "--max-pages", "--paper",
-        "--glue-flap"};
+        "--glue-flap", "--color-style", "--colors"};
     const std::vector<std::string> page_options = {"--paper",     "--orientation", "--font-size",
                                                    "--pages-wide", "--overlap",   "--max-pages",
                                                    "--dry-run",    "--glue-flap"};
@@ -121,11 +133,14 @@ Options parse_args(int argc, char* argv[]) {
             std::exit(EXIT_SUCCESS);
         }
         if (isOneOf(arg, page_options)) opts.page_options_used.push_back(arg);
+        if (arg == "--color-style" || arg == "--colors") opts.color_options_used.push_back(arg);
 
         if (arg == "--invert") {
             opts.invert = true;
         } else if (arg == "--dry-run") {
             opts.dry_run = true;
+        } else if (arg == "--color") {
+            opts.color = true;
         } else if (arg.size() > 1 && arg[0] == '-') {
             if (!isOneOf(arg, value_options)) fail("unknown option '" + arg + "'.");
             if (i + 1 >= argc) fail(arg + " requires a value.");
@@ -164,6 +179,13 @@ Options parse_args(int argc, char* argv[]) {
                 opts.pages_wide = parse_int(arg, value, 1);
             } else if (arg == "--overlap") {
                 opts.page.overlap = parse_int(arg, value, 0);
+            } else if (arg == "--color-style") {
+                if (value == "fg") opts.color_style = ColorStyle::Foreground;
+                else if (value == "bg") opts.color_style = ColorStyle::Background;
+                else fail("--color-style must be 'fg' or 'bg', got '" + value + "'.");
+            } else if (arg == "--colors") {
+                opts.color_levels = parse_int(arg, value, 2);
+                if (opts.color_levels > 256) fail("--colors must be between 2 and 256.");
             } else if (arg == "--glue-flap") {
                 opts.page.glue_flap = parse_number(arg, value);
                 if (!(opts.page.glue_flap >= 0)) fail("--glue-flap must be 0 or greater.");
@@ -189,6 +211,12 @@ void validate(const Options& opts) {
     }
     if (opts.pdf_path.empty() && !opts.page_options_used.empty()) {
         fail(opts.page_options_used.front() + " requires --pdf.");
+    }
+    if (!opts.color && !opts.color_options_used.empty()) {
+        fail(opts.color_options_used.front() + " requires --color.");
+    }
+    if (opts.color && !opts.pdf_path.empty()) {
+        fail("--color is not supported with --pdf yet.");
     }
     if (!opts.pdf_path.empty() && opts.charset == "blocks") {
         fail("the 'blocks' charset is not supported in PDF output (ASCII only).");
@@ -300,6 +328,7 @@ int main(int argc, char* argv[]) {
     if (!converter.setBrightness(opts.brightness)) fail("--brightness must be between -100 and 100.");
     if (!converter.setContrast(opts.contrast)) fail("--contrast must be 0 or greater.");
     if (!converter.setCharset(opts.charset)) fail("unknown charset '" + opts.charset + "'.");
+    if (opts.color) converter.setColorLevels(opts.color_levels);
 
     try {
         if (!opts.pdf_path.empty()) return runPdf(opts, converter);
@@ -319,6 +348,8 @@ int main(int argc, char* argv[]) {
                           << ". Printing to console instead.\n";
                 text.render(grid, std::cout); // Fallback to stdout
             }
+        } else if (opts.color) {
+            AnsiRenderer(opts.color_style).render(grid, std::cout);
         } else {
             text.render(grid, std::cout);
         }

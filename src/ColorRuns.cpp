@@ -18,6 +18,14 @@ bool sameColor(const AsciiCell& cell, const ColorRun& run) {
 
 } // namespace
 
+double luminance(const Rgb& color) {
+    return 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
+}
+
+bool isLight(const Rgb& color) {
+    return luminance(color) >= 128.0;
+}
+
 Rgb quantize(Rgb color, int levels) {
     if (levels < 2 || levels > 256) throw std::invalid_argument("Color levels must be between 2 and 256.");
     if (levels == 256) return color;

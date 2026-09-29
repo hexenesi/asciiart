@@ -16,6 +16,7 @@ endif()
 # Conversion, page layout and PDF code, shared by the CLI and the tests.
 # STB_IMAGE_IMPLEMENTATION is defined in src/ImageConverter.cpp only.
 add_library(asciiart_core STATIC
+    src/AnsiRenderer.cpp
     src/ColorRuns.cpp
     src/ImageConverter.cpp
     src/PageLayout.cpp
@@ -35,7 +36,7 @@ target_link_libraries(ascii_converter PRIVATE asciiart_core project_warnings)
 # --- Tests (run with: ctest --test-dir <build dir>) ---
 enable_testing()
 
-foreach(test_name test_image_converter test_page_layout test_pdf_writer test_poster_renderer test_color_runs)
+foreach(test_name test_image_converter test_page_layout test_pdf_writer test_poster_renderer test_color_runs test_renderers)
     add_executable(${test_name} tests/${test_name}.cpp)
     target_link_libraries(${test_name} PRIVATE asciiart_core project_warnings)
 endforeach()
@@ -46,6 +47,7 @@ add_test(NAME page_layout COMMAND test_page_layout)
 add_test(NAME pdf_writer COMMAND test_pdf_writer)
 add_test(NAME poster_renderer COMMAND test_poster_renderer)
 add_test(NAME color_runs COMMAND test_color_runs)
+add_test(NAME renderers COMMAND test_renderers)
 
 # CLI behavior
 add_test(NAME cli_help COMMAND ascii_converter --help)
@@ -70,6 +72,12 @@ set_tests_properties(pdf_pages_wide PROPERTIES PASS_REGULAR_EXPRESSION "405x[0-9
 add_test(NAME pdf_dry_run COMMAND ascii_converter ${TEST_IMAGE} --pdf dry.pdf --scale 20 --max-pages 500 --dry-run)
 set_tests_properties(pdf_dry_run PROPERTIES PASS_REGULAR_EXPRESSION "1280x768 chars -> 10x7 = 70 pages")
 
+# Color output: escape codes on stdout
+add_test(NAME color_fg COMMAND ascii_converter ${TEST_IMAGE} --color --width 20)
+set_tests_properties(color_fg PROPERTIES PASS_REGULAR_EXPRESSION "\\[38;2;[0-9]+;[0-9]+;[0-9]+m")
+add_test(NAME color_bg COMMAND ascii_converter ${TEST_IMAGE} --color --color-style bg --width 20)
+set_tests_properties(color_bg PROPERTIES PASS_REGULAR_EXPRESSION ";48;2;[0-9]+;[0-9]+;[0-9]+m")
+
 # Each case: name|expected error text|arguments
 foreach(case
         "scale_and_pages_wide|cannot be used together|--pdf;x.pdf;--scale;1;--pages-wide;2"
@@ -79,7 +87,11 @@ foreach(case
         "bad_paper|--paper must be|--pdf;x.pdf;--paper;legal"
         "too_many_pages|70 pages exceeds --max-pages 50|--pdf;x.pdf;--scale;20"
         "glue_flap_too_wide|Glue flap is wider|--pdf;x.pdf;--glue-flap;40"
-        "glue_flap_without_pdf|--glue-flap requires --pdf|--glue-flap;10")
+        "glue_flap_without_pdf|--glue-flap requires --pdf|--glue-flap;10"
+        "color_style_without_color|--color-style requires --color|--color-style;bg"
+        "colors_without_color|--colors requires --color|--colors;16"
+        "colors_out_of_range|--colors must be between 2 and 256|--color;--colors;300"
+        "bad_color_style|--color-style must be|--color;--color-style;rainbow")
     string(REPLACE "|" ";" parts "${case}")
     list(GET parts 0 name)
     list(GET parts 1 expected)

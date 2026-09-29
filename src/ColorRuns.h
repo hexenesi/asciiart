@@ -6,6 +6,15 @@
 
 #include "ImageConverter.h"
 
+/** fg: glyphs drawn in the cell color. bg: cell background filled with the color. */
+enum class ColorStyle { Foreground, Background };
+
+/** Perceived luminance (Rec. 601), 0..255. */
+double luminance(const Rgb& color);
+
+/** True if black text reads better than white on this color. */
+bool isLight(const Rgb& color);
+
 /**
  * @brief Rounds each channel to `levels` evenly spaced values (2..256; 256 = unchanged).
  * With 32 levels, 255 stays 255 and 0 stays 0, so pure colors survive.
