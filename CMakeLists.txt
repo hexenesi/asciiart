@@ -18,6 +18,7 @@ endif()
 add_library(asciiart_core STATIC
     src/AnsiRenderer.cpp
     src/ColorRuns.cpp
+    src/HtmlRenderer.cpp
     src/ImageConverter.cpp
     src/PageLayout.cpp
     src/PdfWriter.cpp
@@ -77,6 +78,12 @@ add_test(NAME color_fg COMMAND ascii_converter ${TEST_IMAGE} --color --width 20)
 set_tests_properties(color_fg PROPERTIES PASS_REGULAR_EXPRESSION "\\[38;2;[0-9]+;[0-9]+;[0-9]+m")
 add_test(NAME color_bg COMMAND ascii_converter ${TEST_IMAGE} --color --color-style bg --width 20)
 set_tests_properties(color_bg PROPERTIES PASS_REGULAR_EXPRESSION ";48;2;[0-9]+;[0-9]+;[0-9]+m")
+
+# HTML output
+add_test(NAME html_plain COMMAND ascii_converter ${TEST_IMAGE} --html plain.html --width 30)
+set_tests_properties(html_plain PROPERTIES PASS_REGULAR_EXPRESSION "Saved HTML to: plain.html")
+add_test(NAME html_color COMMAND ascii_converter ${TEST_IMAGE} --html color.html --color --width 30)
+set_tests_properties(html_color PROPERTIES PASS_REGULAR_EXPRESSION "Saved HTML to: color.html")
 
 # Each case: name|expected error text|arguments
 foreach(case

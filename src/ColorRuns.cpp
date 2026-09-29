@@ -26,6 +26,14 @@ bool isLight(const Rgb& color) {
     return luminance(color) >= 128.0;
 }
 
+Rgb darkenForWhite(const Rgb& color) {
+    const double y = luminance(color);
+    if (y <= kMaxLuminanceOnWhite) return color;
+    const double k = kMaxLuminanceOnWhite / y;
+    auto scale = [k](unsigned char v) { return static_cast<unsigned char>(std::round(v * k)); };
+    return {scale(color.r), scale(color.g), scale(color.b)};
+}
+
 Rgb quantize(Rgb color, int levels) {
     if (levels < 2 || levels > 256) throw std::invalid_argument("Color levels must be between 2 and 256.");
     if (levels == 256) return color;

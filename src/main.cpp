@@ -8,6 +8,7 @@
 
 #include "Errors.h"
 #include "AnsiRenderer.h"
+#include "HtmlRenderer.h"
 #include "ImageConverter.h"
 #include "PageLayout.h"
 #include "PdfWriter.h"
@@ -23,6 +24,7 @@ struct Options {
     double contrast = 1.0;
     std::string charset = ImageConverter::charsetNames().front();
     std::string output_path; // empty = stdout
+    std::string html_path;   // empty = no HTML
     bool invert = false;
 
     // Color
@@ -61,8 +63,13 @@ void print_usage(std::ostream& out) {
            "  --color-style <s>   fg (colored characters) or bg (colored background) (default: fg)\n"
            "  --colors <n>        Levels per color channel, 2 to 256 (default: 32; 256 = exact)\n"
            "\n"
+           "Other formats (with --color, colored; pale colors are darkened for a white page):\n"
+           "  --html <file>       Write a self-contained HTML page\n"
+           "\n"
+           "Art goes to stdout only when no --pdf or --html file is written.\n"
+           "\n"
            "Printable PDF (tiled pages with overview and neighbour numbers):\n"
-           "  --pdf <file>        Write a PDF poster (text is written only with --output)\n"
+           "  --pdf <file>        Write a PDF poster\n"
            "  --paper <name>      letter or a4 (default: letter)\n"
            "  --orientation <o>   portrait, landscape or auto (default: portrait)\n"
            "  --font-size <pt>    Courier size in points (default: 6)\n"
@@ -120,7 +127,7 @@ Options parse_args(int argc, char* argv[]) {
     const std::vector<std::string> value_options = {
         "--width", "--height",      "--scale",     "--brightness", "--contrast", "--charset",  "--output",
         "--pdf",   "--orientation", "--font-size", "--pages-wide", "--overlap",  "--max-pages", "--paper",
-        "--glue-flap", "--color-style", "--colors"};
+        "--glue-flap", "--color-style", "--colors", "--html"};
     const std::vector<std::string> page_options = {"--paper",     "--orientation", "--font-size",
                                                    "--pages-wide", "--overlap",   "--max-pages",
                                                    "--dry-run",    "--glue-flap"};
@@ -163,6 +170,8 @@ Options parse_args(int argc, char* argv[]) {
                 opts.output_path = value;
             } else if (arg == "--pdf") {
                 opts.pdf_path = value;
+            } else if (arg == "--html") {
+                opts.html_path = value;
             } else if (arg == "--paper") {
                 if (value == "letter") opts.page.paper = Paper::Letter;
                 else if (value == "a4") opts.page.paper = Paper::A4;
@@ -244,7 +253,34 @@ bool renderToFile(const std::string& path, const GridRenderer& renderer, const A
     return static_cast<bool>(file);
 }
 
-/** Converts and writes the PDF poster (and optional text copy). Returns the exit code. */
+/** Writes the --output text copy and the --html page, if requested. Returns false on a write error. */
+bool writeSideOutputs(const Options& opts, const AsciiGrid& grid, double char_aspect) {
+    bool ok = true;
+    if (!opts.output_path.empty()) {
+        if (renderToFile(opts.output_path, TextRenderer(), grid)) {
+            std::cerr << "[SUCCESS] Saved text to: " << opts.output_path << "\n";
+        } else {
+            std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path << "\n";
+            ok = false;
+        }
+    }
+    if (!opts.html_path.empty()) {
+        HtmlOptions html;
+        html.color = opts.color;
+        html.style = opts.color_style;
+        html.char_aspect = char_aspect;
+        html.title = baseName(opts.image_path);
+        if (renderToFile(opts.html_path, HtmlRenderer(html), grid)) {
+            std::cerr << "[SUCCESS] Saved HTML to: " << opts.html_path << "\n";
+        } else {
+            std::cerr << "[ERROR] Could not open file for writing: " << opts.html_path << "\n";
+            ok = false;
+        }
+    }
+    return ok;
+}
+
+/** Converts and writes the PDF poster (and optional side outputs). Returns the exit code. */
 int runPdf(const Options& opts, ImageConverter& converter) {
     PageSettings page = opts.page;
     converter.setCharAspect(charAspect(page));
@@ -300,14 +336,7 @@ int runPdf(const Options& opts, ImageConverter& converter) {
     }
     std::cerr << "[SUCCESS] Saved PDF (" << pdf.pageCount() << " pages) to: " << opts.pdf_path << "\n";
 
-    if (!opts.output_path.empty()) {
-        if (!renderToFile(opts.output_path, TextRenderer(), grid)) {
-            std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path << "\n";
-            return EXIT_FAILURE;
-        }
-        std::cerr << "[SUCCESS] Saved text to: " << opts.output_path << "\n";
-    }
-    return EXIT_SUCCESS;
+    return writeSideOutputs(opts, grid, charAspect(page)) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int main(int argc, char* argv[]) {
@@ -339,19 +368,18 @@ int main(int argc, char* argv[]) {
             throw std::runtime_error("Conversion resulted in empty ASCII art after all processing stages.");
         }
 
-        const TextRenderer text;
-        if (!opts.output_path.empty()) {
-            if (renderToFile(opts.output_path, text, grid)) {
-                std::cerr << "[SUCCESS] Conversion complete! Saved art to: " << opts.output_path << std::endl;
-            } else {
-                std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path
-                          << ". Printing to console instead.\n";
-                text.render(grid, std::cout); // Fallback to stdout
+        const double console_aspect = 2.0; // ImageConverter default
+        if (!opts.html_path.empty()) {
+            if (!writeSideOutputs(opts, grid, console_aspect)) return EXIT_FAILURE;
+        } else if (!opts.output_path.empty()) {
+            if (!writeSideOutputs(opts, grid, console_aspect)) {
+                std::cerr << "Printing to console instead.\n";
+                TextRenderer().render(grid, std::cout); // Fallback to stdout
             }
         } else if (opts.color) {
             AnsiRenderer(opts.color_style).render(grid, std::cout);
         } else {
-            text.render(grid, std::cout);
+            TextRenderer().render(grid, std::cout);
         }
 
     } catch (const ImageLoadError& e) {

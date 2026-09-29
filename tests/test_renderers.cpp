@@ -1,6 +1,7 @@
 // Unit tests for GridRenderer implementations (ANSI; HTML and SVG later).
 
 #include "AnsiRenderer.h"
+#include "HtmlRenderer.h"
 #include "TextRenderer.h"
 
 #include <iostream>
@@ -84,6 +85,73 @@ void testTextHasNoEscapes() {
 void testLuminanceHelpers() {
     CHECK(isLight(kYellow) && !isLight(kRed));
     CHECK(isLight({255, 255, 255}) && !isLight({0, 0, 0}));
+
+    // Darkening keeps dark colors, scales pale ones down to the luminance limit.
+    CHECK(darkenForWhite(kRed) == kRed); // Y = 76
+    Rgb dark_yellow = darkenForWhite(kYellow); // Y = 226 -> scaled by 170/226
+    CHECK(dark_yellow == (Rgb{192, 192, 0}));
+    CHECK(luminance(darkenForWhite({255, 255, 255})) <= kMaxLuminanceOnWhite + 0.5);
+}
+
+bool contains(const std::string& haystack, const std::string& needle) {
+    return haystack.find(needle) != std::string::npos;
+}
+
+size_t countOf(const std::string& haystack, const std::string& needle) {
+    size_t count = 0;
+    for (size_t pos = 0; (pos = haystack.find(needle, pos)) != std::string::npos; pos += needle.size()) ++count;
+    return count;
+}
+
+void testHtmlPlain() {
+    AsciiGrid grid = {{AsciiCell("<"), AsciiCell("&"), AsciiCell(">")}, {AsciiCell("@")}};
+    HtmlOptions options;
+    options.title = "a <b>";
+    std::string out = render(HtmlRenderer(options), grid);
+    CHECK(out.rfind("<!DOCTYPE html>", 0) == 0);
+    CHECK(contains(out, "<meta charset=\"utf-8\">"));
+    CHECK(contains(out, "<title>a &lt;b&gt;</title>"));
+    CHECK(contains(out, "<pre class=\"ascii\">&lt;&amp;&gt;\n@\n</pre>"));
+    CHECK(contains(out, "line-height: 1.2;")); // 2.0 aspect * 0.6 em
+    CHECK(!contains(out, "<span"));
+    CHECK(contains(out, "</html>\n"));
+}
+
+void testHtmlForeground() {
+    HtmlOptions options;
+    options.color = true;
+    std::string out = render(HtmlRenderer(options), sampleGrid());
+    // Red kept, yellow darkened; one class per color; one span per visible run.
+    CHECK(contains(out, ".c0 { color: #ff0000; }"));
+    CHECK(contains(out, ".c1 { color: #c0c000; }"));
+    CHECK(!contains(out, ".c2"));
+    CHECK(contains(out, "<span class=\"c0\">@%</span> <span class=\"c1\">.</span>\n:\n"));
+
+    options.darken = false;
+    CHECK(contains(render(HtmlRenderer(options), sampleGrid()), ".c1 { color: #ffff00; }"));
+}
+
+void testHtmlBackground() {
+    HtmlOptions options;
+    options.color = true;
+    options.style = ColorStyle::Background;
+    AsciiGrid grid = {{colored(" ", kYellow), colored(" ", kYellow), colored("@", kRed)}};
+    std::string out = render(HtmlRenderer(options), grid);
+    // Backgrounds are never darkened; text is black on light, white on dark.
+    CHECK(contains(out, ".c0 { background-color: #ffff00; color: #000; }"));
+    CHECK(contains(out, ".c1 { background-color: #ff0000; color: #fff; }"));
+    CHECK(contains(out, "<span class=\"c0\">  </span><span class=\"c1\">@</span>"));
+}
+
+void testHtmlRepeatedColorsShareClass() {
+    HtmlOptions options;
+    options.color = true;
+    AsciiGrid grid = {{colored("@", kRed), AsciiCell(":"), colored("@", kRed)},
+                      {colored("\xE2\x96\x88", kRed)}};
+    std::string out = render(HtmlRenderer(options), grid);
+    CHECK(countOf(out, "{ color:") == 1u);
+    CHECK(countOf(out, "<span class=\"c0\">") == 3u);
+    CHECK(contains(out, "<span class=\"c0\">\xE2\x96\x88</span>"));
 }
 
 } // namespace
@@ -95,6 +163,10 @@ int main() {
     testAnsiUtf8Glyphs();
     testTextHasNoEscapes();
     testLuminanceHelpers();
+    testHtmlPlain();
+    testHtmlForeground();
+    testHtmlBackground();
+    testHtmlRepeatedColorsShareClass();
 
     if (g_failures) {
         std::cerr << g_failures << " check(s) failed\n";

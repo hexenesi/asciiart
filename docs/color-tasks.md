@@ -41,11 +41,11 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 5. HTML
 
-- [ ] 5.1 `HtmlRenderer`: `<pre>`, one class per quantized color, spans per run
-- [ ] 5.2 HTML escaping (`<`, `>`, `&`), UTF-8 for `blocks`
-- [ ] 5.3 `bg` mode via `background-color`
-- [ ] 5.4 CLI: `--html <file>`
-- [ ] 5.5 Tests: structure, class count, escaping, `blocks`; CLI writes file
+- [x] 5.1 `HtmlRenderer`: `<pre>`, one class per quantized color, spans per run
+- [x] 5.2 HTML escaping (`<`, `>`, `&`), UTF-8 for `blocks`
+- [x] 5.3 `bg` mode via `background-color`
+- [x] 5.4 CLI: `--html <file>`
+- [x] 5.5 Tests: structure, class count, escaping, `blocks`; CLI writes file
 
 ## 6. PDF color
 

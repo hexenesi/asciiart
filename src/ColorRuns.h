@@ -16,6 +16,13 @@ double luminance(const Rgb& color);
 bool isLight(const Rgb& color);
 
 /**
+ * @brief Darkens colors too pale to see on white paper: if the luminance is above
+ * kMaxLuminanceOnWhite, all channels are scaled down so it equals that limit (hue is kept).
+ */
+constexpr double kMaxLuminanceOnWhite = 170.0;
+Rgb darkenForWhite(const Rgb& color);
+
+/**
  * @brief Rounds each channel to `levels` evenly spaced values (2..256; 256 = unchanged).
  * With 32 levels, 255 stays 255 and 0 stays 0, so pure colors survive.
  */
