@@ -1,5 +1,7 @@
 #include "ImageConverter.h"
 
+#include "Errors.h"
+
 #include <iostream>
 #include <stdexcept>
 
@@ -9,10 +11,9 @@
 ImageConverter::ImageConverter(const std::string& image_path)
     : m_image_path(image_path) {}
 
-bool ImageConverter::loadAndGrayscale() {
+void ImageConverter::loadAndGrayscale() {
     if (m_image_path.empty()) {
-        std::cerr << "[ERROR] Cannot load: Internal image path is not set." << std::endl;
-        return false;
+        throw ImageLoadError(m_image_path, "no image path set");
     }
     std::cerr << "[INFO] Attempting to load image from: " << m_image_path << std::endl;
     
@@ -22,11 +23,10 @@ bool ImageConverter::loadAndGrayscale() {
     unsigned char* raw_data = stbi_load(m_image_path.c_str(), &m_source_width, &m_source_height, &channels_in_file, 4);
 
     if (!raw_data) {
-        std::cerr << "[ERROR] Failed to load image using stb_image: " << m_image_path << ". Error: " << stbi_failure_reason() << std::endl;
         m_source_width = 0;
         m_source_height = 0;
         m_pixels.clear();
-        return false;
+        throw ImageLoadError(m_image_path, stbi_failure_reason());
     }
 
     size_t total_pixels = static_cast<size_t>(m_source_width) * static_cast<size_t>(m_source_height);
@@ -42,7 +42,6 @@ bool ImageConverter::loadAndGrayscale() {
     stbi_image_free(raw_data);
     std::cerr << "[SUCCESS] Image data loaded and converted to grayscale buffer ("
               << m_source_width << "x" << m_source_height << ").\n";
-    return true;
 }
 
 
@@ -229,9 +228,7 @@ AsciiGrid ImageConverter::generateGrid() const {
 }
 
 AsciiGrid ImageConverter::convertToGrid() {
-    if (!loadAndGrayscale()) {
-        throw std::runtime_error("Failed to load or process image data.");
-    }
+    loadAndGrayscale();
 
     // Start from the requested size so repeated calls give the same result.
     m_width = m_requested_width;

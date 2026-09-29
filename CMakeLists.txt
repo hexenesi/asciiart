@@ -51,9 +51,11 @@ add_test(NAME cli_bad_width COMMAND ascii_converter --width abc x.png)
 add_test(NAME cli_unknown_option COMMAND ascii_converter --foo x.png)
 add_test(NAME cli_missing_value COMMAND ascii_converter x.png --width)
 add_test(NAME cli_bad_brightness COMMAND ascii_converter --brightness 150 x.png)
-add_test(NAME cli_missing_file COMMAND ascii_converter does_not_exist.png)
 set_tests_properties(cli_no_args cli_bad_width cli_unknown_option cli_missing_value
-                     cli_bad_brightness cli_missing_file PROPERTIES WILL_FAIL TRUE)
+                     cli_bad_brightness PROPERTIES WILL_FAIL TRUE)
+add_test(NAME cli_missing_file COMMAND ascii_converter does_not_exist.png)
+set_tests_properties(cli_missing_file PROPERTIES
+    PASS_REGULAR_EXPRESSION "Error: cannot load image 'does_not_exist.png'")
 
 # PDF output (64x64 fixture; 1 char/px at 6 pt fits one Letter page)
 set(TEST_IMAGE ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/circle.png)

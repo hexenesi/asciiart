@@ -58,14 +58,14 @@ double charAspect(const PageSettings& settings);
 
 /**
  * @brief Page size and character capacity for one orientation (Auto is treated as Portrait).
- * @throws std::invalid_argument if a page cannot hold more than `overlap` chars in each direction.
+ * @throws LayoutError if a page cannot hold more than `overlap` chars in each direction.
  */
 PageGeometry computeGeometry(const PageSettings& settings, bool landscape);
 
 /**
  * @brief Tiles an art_cols x art_rows grid onto pages. Auto orientation picks the one with
  * fewer pages (portrait on a tie).
- * @throws std::invalid_argument on non-positive art size or a page too small for the overlap.
+ * @throws LayoutError on non-positive art size or a page too small for the overlap.
  */
 PageLayout computeLayout(int art_cols, int art_rows, const PageSettings& settings);
 

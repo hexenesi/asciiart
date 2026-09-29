@@ -1,5 +1,7 @@
 #include "PageLayout.h"
 
+#include "Errors.h"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -62,11 +64,11 @@ double charAspect(const PageSettings& settings) {
 PageGeometry computeGeometry(const PageSettings& settings, bool landscape) {
     if (!(settings.font_size > 0) || !(settings.leading > 0) || settings.margin < 0 ||
         settings.label_band < 0 || settings.overlap < 0 || !(settings.glue_flap >= 0)) {
-        throw std::invalid_argument("Invalid page settings.");
+        throw LayoutError("Invalid page settings.");
     }
     // The flap and its trim marks must stay on the sheet, clear of the outer half of the margin.
     if (settings.glue_flap > settings.label_band + settings.margin / 2) {
-        throw std::invalid_argument("Glue flap is wider than the space around the art.");
+        throw LayoutError("Glue flap is wider than the space around the art.");
     }
 
     double short_side = settings.paper == Paper::A4 ? 595.0 : 612.0;
@@ -86,14 +88,14 @@ PageGeometry computeGeometry(const PageSettings& settings, bool landscape) {
     g.rows_per_page = floorCount((g.page_height - 2 * inset) / g.line_height);
 
     if (g.cols_per_page <= settings.overlap || g.rows_per_page <= settings.overlap) {
-        throw std::invalid_argument("Page too small for the font size, margins and overlap.");
+        throw LayoutError("Page too small for the font size, margins and overlap.");
     }
     return g;
 }
 
 PageLayout computeLayout(int art_cols, int art_rows, const PageSettings& settings) {
     if (art_cols <= 0 || art_rows <= 0) {
-        throw std::invalid_argument("Art size must be positive.");
+        throw LayoutError("Art size must be positive.");
     }
     if (settings.orientation != Orientation::Auto) {
         return layoutFor(art_cols, art_rows, settings, settings.orientation == Orientation::Landscape);
@@ -105,7 +107,7 @@ PageLayout computeLayout(int art_cols, int art_rows, const PageSettings& setting
 
 int columnsForPagesWide(int pages_wide, const PageSettings& settings) {
     if (pages_wide <= 0) {
-        throw std::invalid_argument("pages_wide must be positive.");
+        throw LayoutError("pages_wide must be positive.");
     }
     PageGeometry g = computeGeometry(settings, settings.orientation == Orientation::Landscape);
     return g.cols_per_page + (pages_wide - 1) * (g.cols_per_page - settings.overlap);

@@ -29,7 +29,7 @@ public:
 
     /**
      * @brief Runs the same conversion as convert() but returns one glyph per cell.
-     * @throws std::runtime_error if the image cannot be loaded.
+     * @throws ImageLoadError if the image cannot be loaded.
      */
     AsciiGrid convertToGrid();
 
@@ -118,8 +118,8 @@ private:
     int m_width = 0;  // Final output width
     int m_height = 0; // Final output height
 
-    /** Loads the image with stb_image and converts it to grayscale. */
-    bool loadAndGrayscale();
+    /** Loads the image with stb_image and converts it to grayscale. @throws ImageLoadError */
+    void loadAndGrayscale();
 
     /**
      * @brief Applies aspect ratio correction to the target dimensions based on known character ratios (e.g., 1:2).

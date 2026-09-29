@@ -1,6 +1,7 @@
 // Unit tests for ImageConverter. Self-contained: writes its own PNG fixtures
 // (uncompressed deflate) so no image encoder or test framework is needed.
 
+#include "Errors.h"
 #include "ImageConverter.h"
 
 #include <cstdint>
@@ -122,7 +123,19 @@ void testMissingFileThrows() {
     bool threw = false;
     try {
         convert("does_not_exist.png");
-    } catch (const std::runtime_error&) {
+    } catch (const ImageLoadError& e) {
+        threw = true;
+        CHECK(e.path() == "does_not_exist.png");
+        CHECK(std::string(e.what()).find("cannot load image 'does_not_exist.png'") == 0);
+    }
+    CHECK(threw);
+
+    // A file that exists but is not an image
+    std::ofstream("not_an_image.png") << "hello";
+    threw = false;
+    try {
+        convert("not_an_image.png");
+    } catch (const ImageLoadError&) {
         threw = true;
     }
     CHECK(threw);

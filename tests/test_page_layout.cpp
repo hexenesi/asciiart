@@ -1,5 +1,6 @@
 // Unit tests for PageLayout (pure geometry, no files).
 
+#include "Errors.h"
 #include "PageLayout.h"
 
 #include <iostream>
@@ -21,7 +22,7 @@ template <typename F>
 bool throwsInvalid(F f) {
     try {
         f();
-    } catch (const std::invalid_argument&) {
+    } catch (const LayoutError&) {
         return true;
     }
     return false;

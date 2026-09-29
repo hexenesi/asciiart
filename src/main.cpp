@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "Errors.h"
 #include "ImageConverter.h"
 #include "PageLayout.h"
 #include "PdfWriter.h"
@@ -195,7 +196,7 @@ void validate(const Options& opts) {
         // Check page settings before the (possibly slow) conversion.
         try {
             computeGeometry(opts.page, opts.page.orientation == Orientation::Landscape);
-        } catch (const std::invalid_argument& e) {
+        } catch (const LayoutError& e) {
             fail(e.what());
         }
     }
@@ -231,7 +232,7 @@ int runPdf(const Options& opts, ImageConverter& converter) {
     if (opts.pages_wide) {
         int src_w = 0, src_h = 0;
         if (!ImageConverter::imageSize(opts.image_path, src_w, src_h)) {
-            throw std::runtime_error("Failed to read image size: " + opts.image_path);
+            throw ImageLoadError(opts.image_path, "cannot read image size");
         }
         // Auto orientation could change the page width afterwards; fix it so the width is exact.
         if (page.orientation == Orientation::Auto) page.orientation = Orientation::Portrait;
@@ -328,6 +329,12 @@ int main(int argc, char* argv[]) {
             std::cout << ascii_art;
         }
 
+    } catch (const ImageLoadError& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        return EXIT_FAILURE;
+    } catch (const LayoutError& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        return EXIT_FAILURE;
     } catch (const std::exception& e) {
         std::cerr << "[FATAL ERROR] Conversion failed: " << e.what() << std::endl;
         return EXIT_FAILURE;
