@@ -121,6 +121,25 @@ void testDrawingWithoutPageThrows() {
     CHECK(threw);
 }
 
+void testColorOperations() {
+    PdfWriter pdf;
+    pdf.beginPage(100, 100);
+    const PdfWriter::Color red{255, 0, 0}, blue{0, 0, 255};
+    pdf.coloredTextLines(10, 90, 6, 6, {{{"ab", red}, {"c", red}, {"(d)", blue}}, {{"e", blue}, {"f", red}}});
+    pdf.fillRect(1, 2, 3, 4, {255, 128, 0});
+    pdf.text(10, 10, 8, "after");
+    std::string out = pdf.finish();
+    // Color emitted only on change, wrapped in q/Q so later text is black again.
+    CHECK(contains(out, "q BT /F1 6 Tf 6 TL 10 90 Td\n"
+                        "1 0 0 rg (ab) Tj (c) Tj 0 0 1 rg (\\(d\\)) Tj \n"
+                        "T* (e) Tj 1 0 0 rg (f) Tj \n"
+                        "ET Q\n"));
+    CHECK(contains(out, "q 1 0.5 0 rg 1 2 3 4 re f Q\n"));
+    CHECK(contains(out, "ET Q\nq 1 0.5 0 rg"));
+    CHECK(contains(out, "Q\nBT /F1 8 Tf 10 10 Td (after) Tj ET"));
+    CHECK(xrefIsValid(out) && streamLengthsMatch(out));
+}
+
 void testEmptyDocumentIsValid() {
     std::string out = PdfWriter().finish();
     CHECK(contains(out, "/Count 0"));
@@ -134,6 +153,7 @@ int main() {
     testStructure();
     testDecimalFormatting();
     testDrawingWithoutPageThrows();
+    testColorOperations();
     testEmptyDocumentIsValid();
 
     if (g_failures) {

@@ -88,8 +88,8 @@ void testLuminanceHelpers() {
 
     // Darkening keeps dark colors, scales pale ones down to the luminance limit.
     CHECK(darkenForWhite(kRed) == kRed); // Y = 76
-    Rgb dark_yellow = darkenForWhite(kYellow); // Y = 226 -> scaled by 170/226
-    CHECK(dark_yellow == (Rgb{192, 192, 0}));
+    Rgb dark_yellow = darkenForWhite(kYellow); // Y = 226 -> scaled by 110/226
+    CHECK(dark_yellow == (Rgb{124, 124, 0}));
     CHECK(luminance(darkenForWhite({255, 255, 255})) <= kMaxLuminanceOnWhite + 0.5);
 }
 
@@ -124,7 +124,7 @@ void testHtmlForeground() {
     std::string out = render(HtmlRenderer(options), sampleGrid());
     // Red kept, yellow darkened; one class per color; one span per visible run.
     CHECK(contains(out, ".c0 { color: #ff0000; }"));
-    CHECK(contains(out, ".c1 { color: #c0c000; }"));
+    CHECK(contains(out, ".c1 { color: #7c7c00; }"));
     CHECK(!contains(out, ".c2"));
     CHECK(contains(out, "<span class=\"c0\">@%</span> <span class=\"c1\">.</span>\n:\n"));
 

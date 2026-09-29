@@ -224,9 +224,6 @@ void validate(const Options& opts) {
     if (!opts.color && !opts.color_options_used.empty()) {
         fail(opts.color_options_used.front() + " requires --color.");
     }
-    if (opts.color && !opts.pdf_path.empty()) {
-        fail("--color is not supported with --pdf yet.");
-    }
     if (!opts.pdf_path.empty() && opts.charset == "blocks") {
         fail("the 'blocks' charset is not supported in PDF output (ASCII only).");
     }
@@ -328,8 +325,11 @@ int runPdf(const Options& opts, ImageConverter& converter) {
     if (opts.dry_run) return EXIT_SUCCESS;
 
     PdfWriter pdf;
+    PosterColor color;
+    color.enabled = opts.color;
+    color.style = opts.color_style;
     renderPoster(grid, layout, page, {baseName(opts.image_path), size_desc + ", " + paper_desc + ", " + font_desc},
-                 pdf);
+                 pdf, color);
     if (!pdf.save(opts.pdf_path)) {
         std::cerr << "[ERROR] Could not write PDF: " << opts.pdf_path << "\n";
         return EXIT_FAILURE;

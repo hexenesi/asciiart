@@ -19,7 +19,7 @@ bool isLight(const Rgb& color);
  * @brief Darkens colors too pale to see on white paper: if the luminance is above
  * kMaxLuminanceOnWhite, all channels are scaled down so it equals that limit (hue is kept).
  */
-constexpr double kMaxLuminanceOnWhite = 170.0;
+constexpr double kMaxLuminanceOnWhite = 110.0;
 Rgb darkenForWhite(const Rgb& color);
 
 /**

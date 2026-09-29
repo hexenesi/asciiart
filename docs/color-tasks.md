@@ -49,12 +49,12 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 6. PDF color
 
-- [ ] 6.1 `PdfWriter`: fill color (`rg`) and filled rectangles (`re f`)
-- [ ] 6.2 `fg`: color set per run within each text line
-- [ ] 6.3 `bg`: merged run rectangles behind glyphs; black or white glyphs by background luminance
-- [ ] 6.4 Darken light colors in `fg` mode
-- [ ] 6.5 Labels, marks and overview stay black
-- [ ] 6.6 Tests: `rg` per run, rectangles in `bg`, darkening; `pdfinfo`/`mutool` check; visual check of a rendered page
+- [x] 6.1 `PdfWriter`: fill color (`rg`) and filled rectangles (`re f`)
+- [x] 6.2 `fg`: color set per run within each text line
+- [x] 6.3 `bg`: merged run rectangles behind glyphs; black or white glyphs by background luminance
+- [x] 6.4 Darken light colors in `fg` mode
+- [x] 6.5 Labels, marks and overview stay black
+- [x] 6.6 Tests: `rg` per run, rectangles in `bg`, darkening; `pdfinfo`/`mutool` check; visual check of a rendered page
 
 ## 7. PDF compression
 

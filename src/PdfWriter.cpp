@@ -56,6 +56,38 @@ void PdfWriter::textLines(double x, double y, double font_size, double leading, 
     c += "ET\n";
 }
 
+namespace {
+std::string fillColor(const PdfWriter::Color& c) {
+    return num(c.r / 255.0) + " " + num(c.g / 255.0) + " " + num(c.b / 255.0) + " rg";
+}
+} // namespace
+
+void PdfWriter::coloredTextLines(double x, double y, double font_size, double leading,
+                                 const std::vector<std::vector<TextRun>>& lines) {
+    if (lines.empty()) return;
+    std::string& c = content();
+    c += "q BT /F1 " + num(font_size) + " Tf " + num(leading) + " TL " + num(x) + " " + num(y) + " Td\n";
+    bool have_color = false;
+    Color current;
+    for (size_t i = 0; i < lines.size(); ++i) {
+        if (i > 0) c += "T* ";
+        for (const TextRun& run : lines[i]) {
+            if (!have_color || run.color != current) {
+                c += fillColor(run.color) + " ";
+                current = run.color;
+                have_color = true;
+            }
+            c += "(" + escape(run.text) + ") Tj ";
+        }
+        c += "\n";
+    }
+    c += "ET Q\n";
+}
+
+void PdfWriter::fillRect(double x, double y, double w, double h, Color color) {
+    content() += "q " + fillColor(color) + " " + num(x) + " " + num(y) + " " + num(w) + " " + num(h) + " re f Q\n";
+}
+
 void PdfWriter::line(double x1, double y1, double x2, double y2, double width, double gray, bool dashed) {
     content() += "q " + num(gray) + " G " + num(width) + " w " + (dashed ? "[2 2] 0 d " : "") + num(x1) + " " + num(y1) + " m " + num(x2) + " " +
                  num(y2) + " l S Q\n";

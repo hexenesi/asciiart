@@ -50,11 +50,12 @@ AsciiGrid makeGrid(int cols, int rows) {
     return grid;
 }
 
-std::vector<std::string> render(const AsciiGrid& grid, const PageSettings& settings, PageLayout* out_layout = nullptr) {
+std::vector<std::string> render(const AsciiGrid& grid, const PageSettings& settings, PageLayout* out_layout = nullptr,
+                                const PosterColor& color = {}) {
     PageLayout layout = computeLayout(static_cast<int>(grid[0].size()), static_cast<int>(grid.size()), settings);
     if (out_layout) *out_layout = layout;
     PdfWriter pdf;
-    renderPoster(grid, layout, settings, {"test.png", "Scale 1 char/px"}, pdf);
+    renderPoster(grid, layout, settings, {"test.png", "Scale 1 char/px"}, pdf, color);
     return pageContents(pdf.finish());
 }
 
@@ -128,6 +129,56 @@ void testTrimMarks() {
     CHECK(contains(flat[0], "butt the pages together"));
 }
 
+AsciiCell coloredCell(const std::string& glyph, Rgb color) {
+    AsciiCell cell(glyph);
+    cell.color = color;
+    cell.has_color = true;
+    return cell;
+}
+
+// One row: two dark red '@', a blank pale-yellow cell, a pale-yellow '.', and an uncolored ':'.
+AsciiGrid colorGrid() {
+    const Rgb red{200, 0, 0}, yellow{255, 255, 0};
+    return {{coloredCell("@", red), coloredCell("@", red), coloredCell(" ", yellow), coloredCell(".", yellow),
+             AsciiCell(":")}};
+}
+
+void testColorForeground() {
+    PosterColor color;
+    color.enabled = true;
+    auto pages = render(colorGrid(), PageSettings{}, nullptr, color);
+    const std::string& art = pages[1];
+    // Red is dark enough to keep; the yellow run (blank + '.') is darkened (Y 226 -> 110); ':' black.
+    CHECK(contains(art, "0.78 0 0 rg (@@) Tj 0.49 0.49 0 rg ( .) Tj 0 0 0 rg (:) Tj"));
+    CHECK(!contains(art, " re f")); // no rectangles in fg mode
+    // Labels after the art are drawn black (art wrapped in q/Q).
+    CHECK(contains(art, "ET Q\n"));
+    CHECK(!contains(pages[0], " rg")); // overview has no color
+
+    color.darken = false;
+    CHECK(contains(render(colorGrid(), PageSettings{}, nullptr, color)[1], "1 1 0 rg ( .) Tj"));
+}
+
+void testColorBackground() {
+    PosterColor color;
+    color.enabled = true;
+    color.style = ColorStyle::Background;
+    const std::string art = render(colorGrid(), PageSettings{}, nullptr, color)[1];
+    // One rectangle per colored run (red x2, yellow x2), none for the uncolored cell.
+    CHECK(countOf(art, " re f Q") == 2u);
+    CHECK(contains(art, "q 0.78 0 0 rg 54 731.9 7.3 6.1 re f Q")); // 2 cells: 7.2 + 0.1 overlap
+    CHECK(contains(art, "q 1 1 0 rg 61.2 731.9 7.3 6.1 re f Q"));  // backgrounds never darkened
+    // White text on dark red, black on yellow and on the uncolored cell.
+    CHECK(contains(art, "1 1 1 rg (@@) Tj 0 0 0 rg ( .) Tj (:) Tj"));
+}
+
+void testNoColorIsUnchanged() {
+    // Color disabled: plain textLines, no color operators at all.
+    auto pages = render(colorGrid(), PageSettings{});
+    CHECK(!contains(pages[1], " rg"));
+    CHECK(contains(pages[1], "(@@ .:) Tj"));
+}
+
 void testEscapedGlyphs() {
     AsciiGrid grid(1, std::vector<AsciiCell>{{"("}, {")"}, {"\\"}});
     auto pages = render(grid, PageSettings{});
@@ -158,6 +209,9 @@ int main() {
     testNeighbourLabels();
     testSinglePageHasNoNeighbours();
     testTrimMarks();
+    testColorForeground();
+    testColorBackground();
+    testNoColorIsUnchanged();
     testEscapedGlyphs();
     testRejectsInvalidGrid();
 

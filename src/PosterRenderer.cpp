@@ -76,21 +76,64 @@ void drawTrimMarks(PdfWriter& pdf, const Page& page, double flap, double left, d
     }
 }
 
+PdfWriter::Color toPdf(const Rgb& c) {
+    return {c.r, c.g, c.b};
+}
+
+// Colored art: each row of the slice becomes runs of equal color.
+// fg: glyphs in the (darkened) cell color; blank runs keep the current color to avoid switches.
+// bg: one filled rectangle per colored run, then glyphs in black or white for contrast.
+void drawColoredArt(PdfWriter& pdf, const AsciiGrid& grid, const Page& page, const PageGeometry& g,
+                    const PageSettings& settings, const PosterColor& color, double art_left, double art_top) {
+    const bool fg = color.style == ColorStyle::Foreground;
+    const PdfWriter::Color black{0, 0, 0}, white{255, 255, 255};
+    std::vector<std::vector<PdfWriter::TextRun>> lines;
+    PdfWriter::Color current = black;
+
+    for (int r = page.row_begin; r < page.row_end; ++r) {
+        std::vector<PdfWriter::TextRun> line;
+        const double cell_top = art_top - (r - page.row_begin) * g.line_height;
+        for (const ColorRun& run : splitRuns(grid[r], page.col_begin, page.col_end)) {
+            PdfWriter::Color text_color = black;
+            if (fg) {
+                const bool blank = run.text.find_first_not_of(' ') == std::string::npos;
+                if (blank) text_color = current;
+                else if (run.has_color) text_color = toPdf(color.darken ? darkenForWhite(run.color) : run.color);
+            } else if (run.has_color) {
+                // Slight overlap hides hairline seams between neighbouring rectangles in viewers.
+                const double x = art_left + (run.start - page.col_begin) * g.char_width;
+                pdf.fillRect(x, cell_top - g.line_height - 0.1, run.length * g.char_width + 0.1, g.line_height + 0.1,
+                             toPdf(run.color));
+                text_color = isLight(run.color) ? black : white;
+            }
+            line.push_back({run.text, text_color});
+            current = text_color;
+        }
+        lines.push_back(std::move(line));
+    }
+    pdf.coloredTextLines(art_left, art_top - g.line_height * kBaselineRatio, settings.font_size, g.line_height,
+                         lines);
+}
+
 void drawArtPage(PdfWriter& pdf, const AsciiGrid& grid, const PageLayout& layout, const PageSettings& settings,
-                 const Page& page) {
+                 const Page& page, const PosterColor& color) {
     const PageGeometry& g = layout.geometry;
     pdf.beginPage(g.page_width, g.page_height);
 
     // Art: fixed origin on every sheet so neighbouring pages line up.
     const double art_left = g.art_left;
     const double art_top = g.page_height - g.art_top;
-    std::vector<std::string> lines;
-    for (int r = page.row_begin; r < page.row_end; ++r) {
-        std::string line;
-        for (int c = page.col_begin; c < page.col_end; ++c) line += grid[r][c].glyph;
-        lines.push_back(line);
+    if (color.enabled) {
+        drawColoredArt(pdf, grid, page, g, settings, color, art_left, art_top);
+    } else {
+        std::vector<std::string> lines;
+        for (int r = page.row_begin; r < page.row_end; ++r) {
+            std::string line;
+            for (int c = page.col_begin; c < page.col_end; ++c) line += grid[r][c].glyph;
+            lines.push_back(line);
+        }
+        pdf.textLines(art_left, art_top - g.line_height * kBaselineRatio, settings.font_size, g.line_height, lines);
     }
-    pdf.textLines(art_left, art_top - g.line_height * kBaselineRatio, settings.font_size, g.line_height, lines);
 
     // Marks at the bounds of this page's slice.
     const double slice_right = art_left + (page.col_end - page.col_begin) * g.char_width;
@@ -192,8 +235,8 @@ void drawOverviewPage(PdfWriter& pdf, const PageLayout& layout, const PageSettin
 } // namespace
 
 void renderPoster(const AsciiGrid& grid, const PageLayout& layout, const PageSettings& settings,
-                  const PosterInfo& info, PdfWriter& pdf) {
+                  const PosterInfo& info, PdfWriter& pdf, const PosterColor& color) {
     validateGrid(grid, layout);
     drawOverviewPage(pdf, layout, settings, info);
-    for (const Page& page : layout.pages) drawArtPage(pdf, grid, layout, settings, page);
+    for (const Page& page : layout.pages) drawArtPage(pdf, grid, layout, settings, page, color);
 }

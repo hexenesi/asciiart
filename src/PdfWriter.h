@@ -13,6 +13,19 @@
  */
 class PdfWriter {
 public:
+    /** 8-bit RGB fill color. */
+    struct Color {
+        unsigned char r = 0, g = 0, b = 0;
+        bool operator==(const Color& o) const { return r == o.r && g == o.g && b == o.b; }
+        bool operator!=(const Color& o) const { return !(*this == o); }
+    };
+
+    /** A piece of a text line drawn in one color. */
+    struct TextRun {
+        std::string text;
+        Color color;
+    };
+
     /** Starts a new page; later drawing calls go to it. */
     void beginPage(double width, double height);
 
@@ -21,6 +34,16 @@ public:
 
     /** Draws lines top to bottom; the first baseline is at (x, y), each next one `leading` lower. */
     void textLines(double x, double y, double font_size, double leading, const std::vector<std::string>& lines);
+
+    /**
+     * @brief Like textLines(), but each line is a sequence of colored runs. The color is only
+     * emitted when it changes. The fill color is restored afterwards (q/Q), so later text is black.
+     */
+    void coloredTextLines(double x, double y, double font_size, double leading,
+                          const std::vector<std::vector<TextRun>>& lines);
+
+    /** Fills a rectangle (no outline) with its bottom-left corner at (x, y). */
+    void fillRect(double x, double y, double w, double h, Color color);
 
     /** Strokes a straight line. gray: 0 = black, 1 = white. dashed: 2 pt on, 2 pt off. */
     void line(double x1, double y1, double x2, double y2, double width = 0.5, double gray = 0.0,

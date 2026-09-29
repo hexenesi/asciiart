@@ -79,6 +79,9 @@ set_tests_properties(color_fg PROPERTIES PASS_REGULAR_EXPRESSION "\\[38;2;[0-9]+
 add_test(NAME color_bg COMMAND ascii_converter ${TEST_IMAGE} --color --color-style bg --width 20)
 set_tests_properties(color_bg PROPERTIES PASS_REGULAR_EXPRESSION ";48;2;[0-9]+;[0-9]+;[0-9]+m")
 
+add_test(NAME pdf_color COMMAND ascii_converter ${TEST_IMAGE} --pdf color.pdf --color --color-style bg)
+set_tests_properties(pdf_color PROPERTIES PASS_REGULAR_EXPRESSION "Saved PDF \\(2 pages\\)")
+
 # HTML output
 add_test(NAME html_plain COMMAND ascii_converter ${TEST_IMAGE} --html plain.html --width 30)
 set_tests_properties(html_plain PROPERTIES PASS_REGULAR_EXPRESSION "Saved HTML to: plain.html")
