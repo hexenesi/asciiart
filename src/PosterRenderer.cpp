@@ -32,7 +32,8 @@ void validateGrid(const AsciiGrid& grid, const PageLayout& layout) {
         if (row.size() != static_cast<size_t>(last.col_end)) {
             throw std::invalid_argument("Grid width does not match the layout.");
         }
-        for (const auto& glyph : row) {
+        for (const auto& cell : row) {
+            const std::string& glyph = cell.glyph;
             if (glyph.size() != 1 || glyph[0] < 0x20 || glyph[0] > 0x7E) {
                 throw std::invalid_argument("PDF output supports ASCII charsets only (not 'blocks').");
             }
@@ -86,7 +87,7 @@ void drawArtPage(PdfWriter& pdf, const AsciiGrid& grid, const PageLayout& layout
     std::vector<std::string> lines;
     for (int r = page.row_begin; r < page.row_end; ++r) {
         std::string line;
-        for (int c = page.col_begin; c < page.col_end; ++c) line += grid[r][c];
+        for (int c = page.col_begin; c < page.col_end; ++c) line += grid[r][c].glyph;
         lines.push_back(line);
     }
     pdf.textLines(art_left, art_top - g.line_height * kBaselineRatio, settings.font_size, g.line_height, lines);

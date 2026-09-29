@@ -298,10 +298,36 @@ void testGridMatchesString() {
     std::string joined;
     for (const auto& row : grid) {
         CHECK(row.size() == 20u);
-        for (const auto& glyph : row) joined += glyph;
+        for (const auto& cell : row) joined += cell.glyph;
         joined += '\n';
     }
     CHECK(joined == convert(path, configure));
+}
+
+void testColorSurvivesLoadAndResize() {
+    // Red left half, blue right half, transparent bottom row.
+    auto path = writePng("colors", 4, 3, [](int x, int y) {
+        if (y == 2) return Rgba{0, 255, 0, 0};
+        return x < 2 ? Rgba{255, 0, 0, 255} : Rgba{0, 0, 255, 255};
+    });
+    ImageConverter c(path);
+    c.setWidth(8); // upscale
+    c.setHeight(3);
+    c.setBrightness(50); // must not change the stored color
+    AsciiGrid grid = c.convertToGrid();
+    CHECK(grid.size() == 3u && grid[0].size() == 8u);
+    CHECK(grid[0][0].has_color && grid[0][0].color == (Rgb{255, 0, 0}));
+    CHECK(grid[1][7].has_color && grid[1][7].color == (Rgb{0, 0, 255}));
+    CHECK(!grid[2][0].has_color && grid[2][0].glyph == " ");
+
+    // Glyphs still follow luminance over "@%#*+=-:. ": red Y = 76 -> index 3 ('*'),
+    // blue Y = 29 -> index 1 ('%').
+    ImageConverter plain(path);
+    plain.setWidth(8);
+    plain.setHeight(3);
+    AsciiGrid g = plain.convertToGrid();
+    CHECK(g[0][0].glyph == "*");
+    CHECK(g[0][7].glyph == "%");
 }
 
 void testConvertIsRepeatable() {
@@ -326,6 +352,7 @@ int main() {
     testTransparentIsBlank();
     testBrightnessAndContrast();
     testGridMatchesString();
+    testColorSurvivesLoadAndResize();
     testConvertIsRepeatable();
 
     if (g_failures) {

@@ -2,16 +2,35 @@
 #define IMAGE_CONVERTER_H
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 
-struct Pixel {
-    unsigned char r, g, b, a; // After loading: r = g = b = grayscale intensity, a = alpha
+struct Rgb {
+    unsigned char r = 0, g = 0, b = 0;
+
+    bool operator==(const Rgb& other) const { return r == other.r && g == other.g && b == other.b; }
+    bool operator!=(const Rgb& other) const { return !(*this == other); }
 };
 
-/** Rows of glyphs; each glyph is a string so multi-byte UTF-8 characters fit in one cell. */
-using AsciiGrid = std::vector<std::vector<std::string>>;
+struct Pixel {
+    Rgb color;             // original source color (unchanged by brightness/contrast)
+    unsigned char luma;    // perceived luminance; brightness/contrast apply here; picks the glyph
+    unsigned char alpha;
+};
+
+/** One output cell. The glyph is a string so multi-byte UTF-8 characters fit in one cell. */
+struct AsciiCell {
+    AsciiCell() = default;
+    AsciiCell(std::string g) : glyph(std::move(g)) {} // NOLINT: implicit for brace-init lists
+
+    std::string glyph;
+    Rgb color;              // source color of the cell's pixel
+    bool has_color = false; // false for fully transparent pixels
+};
+
+using AsciiGrid = std::vector<std::vector<AsciiCell>>;
 
 /**
  * @brief Manages the entire process of converting an image to ASCII art.
@@ -28,7 +47,7 @@ public:
     std::string convert();
 
     /**
-     * @brief Runs the same conversion as convert() but returns one glyph per cell.
+     * @brief Runs the same conversion as convert() but returns one cell (glyph + color) per character.
      * @throws ImageLoadError if the image cannot be loaded.
      */
     AsciiGrid convertToGrid();

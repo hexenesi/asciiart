@@ -210,7 +210,7 @@ std::string baseName(const std::string& path) {
 std::string joinGrid(const AsciiGrid& grid) {
     std::string text;
     for (const auto& row : grid) {
-        for (const auto& glyph : row) text += glyph;
+        for (const auto& cell : row) text += cell.glyph;
         text += '\n';
     }
     return text;

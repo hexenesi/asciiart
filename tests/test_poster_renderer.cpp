@@ -44,9 +44,9 @@ std::vector<std::string> pageContents(const std::string& pdf) {
 
 // Grid where each cell's glyph encodes its column band, so slices are recognizable.
 AsciiGrid makeGrid(int cols, int rows) {
-    AsciiGrid grid(rows, std::vector<std::string>(cols));
+    AsciiGrid grid(rows, std::vector<AsciiCell>(cols));
     for (int r = 0; r < rows; ++r)
-        for (int c = 0; c < cols; ++c) grid[r][c] = std::string(1, static_cast<char>('A' + (c / 140) + 3 * (r / 114)));
+        for (int c = 0; c < cols; ++c) grid[r][c].glyph = std::string(1, static_cast<char>('A' + (c / 140) + 3 * (r / 114)));
     return grid;
 }
 
@@ -129,7 +129,7 @@ void testTrimMarks() {
 }
 
 void testEscapedGlyphs() {
-    AsciiGrid grid(1, std::vector<std::string>{"(", ")", "\\"});
+    AsciiGrid grid(1, std::vector<AsciiCell>{{"("}, {")"}, {"\\"}});
     auto pages = render(grid, PageSettings{});
     CHECK(contains(pages[1], "(\\(\\)\\\\) Tj"));
 }
@@ -145,7 +145,7 @@ void testRejectsInvalidGrid() {
         }
         return false;
     };
-    AsciiGrid blocks(1, std::vector<std::string>{"\xE2\x96\x88"});
+    AsciiGrid blocks(1, std::vector<AsciiCell>{{"\xE2\x96\x88"}});
     CHECK(throws(blocks, 1, 1));
     CHECK(throws(makeGrid(10, 10), 11, 10)); // size mismatch
 }

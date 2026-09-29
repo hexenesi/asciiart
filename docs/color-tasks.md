@@ -12,12 +12,12 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 1. Color data model
 
-- [ ] 1.1 `Pixel` keeps original RGB + alpha, plus a separate luminance
-- [ ] 1.2 Brightness/contrast adjust luminance only
-- [ ] 1.3 `AsciiCell { glyph, color, has_color }`; `AsciiGrid` = rows of cells
-- [ ] 1.4 `convert()` joins glyphs only; plain text output byte-identical
-- [ ] 1.5 Update `PosterRenderer` and tests to the new grid type
-- [ ] 1.6 Tests: color survives load + resize; transparent cells have no color; grayscale output unchanged
+- [x] 1.1 `Pixel` keeps original RGB + alpha, plus a separate luminance
+- [x] 1.2 Brightness/contrast adjust luminance only
+- [x] 1.3 `AsciiCell { glyph, color, has_color }`; `AsciiGrid` = rows of cells
+- [x] 1.4 `convert()` joins glyphs only; plain text output byte-identical
+- [x] 1.5 Update `PosterRenderer` and tests to the new grid type
+- [x] 1.6 Tests: color survives load + resize; transparent cells have no color; grayscale output unchanged
 
 ## 2. Quantization and runs
 

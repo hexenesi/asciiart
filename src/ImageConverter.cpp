@@ -36,7 +36,7 @@ void ImageConverter::loadAndGrayscale() {
         const unsigned char* rgba = raw_data + i * 4;
         // Perceived luminance (Rec. 601): Y = 0.299R + 0.587G + 0.114B
         auto y = static_cast<unsigned char>(std::round(rgba[0] * 0.299 + rgba[1] * 0.587 + rgba[2] * 0.114));
-        m_pixels[i] = {y, y, y, rgba[3]};
+        m_pixels[i] = {{rgba[0], rgba[1], rgba[2]}, y, rgba[3]};
     }
 
     stbi_image_free(raw_data);
@@ -144,11 +144,10 @@ bool ImageConverter::adjustPixelIntensity() {
 
     const double shift = m_brightness / 100.0;
     for (Pixel& pixel : m_pixels) {
-        // Grayscale: R, G and B hold the same intensity.
-        double v = pixel.r / 255.0;
+        // Only the luminance changes; the source color is kept as is.
+        double v = pixel.luma / 255.0;
         double v_new = std::clamp(m_contrast * (v - 0.5) + 0.5 + shift, 0.0, 1.0);
-        unsigned char intensity = static_cast<unsigned char>(std::round(v_new * 255.0));
-        pixel.r = pixel.g = pixel.b = intensity;
+        pixel.luma = static_cast<unsigned char>(std::round(v_new * 255.0));
     }
     std::cerr << "[SUCCESS] Pixel intensities adjusted for Brightness/Contrast.\n";
     return true;
@@ -210,17 +209,20 @@ const std::string& ImageConverter::mapIntensityToChar(unsigned char intensity) c
 }
 
 AsciiGrid ImageConverter::generateGrid() const {
-    AsciiGrid grid(m_height, std::vector<std::string>(m_width));
+    AsciiGrid grid(m_height, std::vector<AsciiCell>(m_width));
 
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {
             const Pixel& pixel = m_pixels[static_cast<size_t>(y) * m_width + x];
             // Invert for light-on-dark terminals, then blend transparent pixels toward
             // the lightest glyph (blank) so they stay empty in both modes.
-            double v = m_invert ? 255.0 - pixel.r : pixel.r;
-            double alpha = pixel.a / 255.0;
+            double v = m_invert ? 255.0 - pixel.luma : pixel.luma;
+            double alpha = pixel.alpha / 255.0;
             v = alpha * v + (1.0 - alpha) * 255.0;
-            grid[y][x] = mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
+            AsciiCell& cell = grid[y][x];
+            cell.glyph = mapIntensityToChar(static_cast<unsigned char>(std::round(v)));
+            cell.color = pixel.color;
+            cell.has_color = pixel.alpha != 0;
         }
     }
 
@@ -244,7 +246,7 @@ AsciiGrid ImageConverter::convertToGrid() {
 std::string ImageConverter::convert() {
     std::string ascii_art;
     for (const auto& row : convertToGrid()) {
-        for (const auto& glyph : row) ascii_art += glyph;
+        for (const auto& cell : row) ascii_art += cell.glyph;
         ascii_art += '\n';
     }
     return ascii_art;
