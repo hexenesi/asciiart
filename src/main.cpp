@@ -11,6 +11,7 @@
 #include "PageLayout.h"
 #include "PdfWriter.h"
 #include "PosterRenderer.h"
+#include "TextRenderer.h"
 
 struct Options {
     std::string image_path;
@@ -207,19 +208,11 @@ std::string baseName(const std::string& path) {
     return slash == std::string::npos ? path : path.substr(slash + 1);
 }
 
-std::string joinGrid(const AsciiGrid& grid) {
-    std::string text;
-    for (const auto& row : grid) {
-        for (const auto& cell : row) text += cell.glyph;
-        text += '\n';
-    }
-    return text;
-}
-
-bool writeText(const std::string& path, const std::string& text) {
-    std::ofstream file(path);
+/** Renders the grid into a file; returns false if the file cannot be written. */
+bool renderToFile(const std::string& path, const GridRenderer& renderer, const AsciiGrid& grid) {
+    std::ofstream file(path, std::ios::binary);
     if (!file) return false;
-    file << text;
+    renderer.render(grid, file);
     return static_cast<bool>(file);
 }
 
@@ -280,7 +273,7 @@ int runPdf(const Options& opts, ImageConverter& converter) {
     std::cerr << "[SUCCESS] Saved PDF (" << pdf.pageCount() << " pages) to: " << opts.pdf_path << "\n";
 
     if (!opts.output_path.empty()) {
-        if (!writeText(opts.output_path, joinGrid(grid))) {
+        if (!renderToFile(opts.output_path, TextRenderer(), grid)) {
             std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path << "\n";
             return EXIT_FAILURE;
         }
@@ -311,22 +304,23 @@ int main(int argc, char* argv[]) {
     try {
         if (!opts.pdf_path.empty()) return runPdf(opts, converter);
 
-        std::string ascii_art = converter.convert();
+        AsciiGrid grid = converter.convertToGrid();
 
-        if (ascii_art.empty()) {
+        if (grid.empty()) {
             throw std::runtime_error("Conversion resulted in empty ASCII art after all processing stages.");
         }
 
+        const TextRenderer text;
         if (!opts.output_path.empty()) {
-            if (writeText(opts.output_path, ascii_art)) {
+            if (renderToFile(opts.output_path, text, grid)) {
                 std::cerr << "[SUCCESS] Conversion complete! Saved art to: " << opts.output_path << std::endl;
             } else {
                 std::cerr << "[ERROR] Could not open file for writing: " << opts.output_path
                           << ". Printing to console instead.\n";
-                std::cout << ascii_art; // Fallback to cout
+                text.render(grid, std::cout); // Fallback to stdout
             }
         } else {
-            std::cout << ascii_art;
+            text.render(grid, std::cout);
         }
 
     } catch (const ImageLoadError& e) {

@@ -21,6 +21,7 @@ add_library(asciiart_core STATIC
     src/PageLayout.cpp
     src/PdfWriter.cpp
     src/PosterRenderer.cpp
+    src/TextRenderer.cpp
 )
 target_include_directories(asciiart_core
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src

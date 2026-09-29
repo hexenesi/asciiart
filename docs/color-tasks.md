@@ -27,9 +27,9 @@ See [color-plan.md](color-plan.md) for the design. One commit per numbered group
 
 ## 3. Renderer interface
 
-- [ ] 3.1 `GridRenderer` interface (`render(grid, ostream)`)
-- [ ] 3.2 `TextRenderer`: move plain text output out of `main.cpp`
-- [ ] 3.3 Tests: `TextRenderer` output equals `convert()`
+- [x] 3.1 `GridRenderer` interface (`render(grid, ostream)`)
+- [x] 3.2 `TextRenderer`: move plain text output out of `main.cpp`
+- [x] 3.3 Tests: `TextRenderer` output equals `convert()`
 
 ## 4. ANSI terminal
 

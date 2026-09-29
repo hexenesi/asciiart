@@ -3,6 +3,7 @@
 
 #include "Errors.h"
 #include "ImageConverter.h"
+#include "TextRenderer.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -342,6 +343,21 @@ void testColorSurvivesLoadAndResize() {
     CHECK(!q.setColorLevels(1) && !q.setColorLevels(257) && q.setColorLevels(0));
 }
 
+void testTextRendererMatchesConvert() {
+    auto path = writePng("text_renderer", 64, 32, [](int x, int y) {
+        auto v = static_cast<unsigned char>((x * 4 + y * 3) % 256);
+        return Rgba{v, v, v, static_cast<unsigned char>(y < 4 ? 0 : 255)};
+    });
+    for (const char* charset : {"standard", "detailed", "blocks"}) {
+        ImageConverter c(path);
+        c.setWidth(30);
+        c.setCharset(charset);
+        std::ostringstream out;
+        TextRenderer().render(c.convertToGrid(), out);
+        CHECK(out.str() == c.convert());
+    }
+}
+
 void testConvertIsRepeatable() {
     ImageConverter c(solid("repeat", 300, 150, 128));
     auto first = c.convert();
@@ -365,6 +381,7 @@ int main() {
     testBrightnessAndContrast();
     testGridMatchesString();
     testColorSurvivesLoadAndResize();
+    testTextRendererMatchesConvert();
     testConvertIsRepeatable();
 
     if (g_failures) {
